@@ -12,6 +12,8 @@ import PasswordSection from "@/components/admin/sign-up/PasswordSection";
 import useUserData from "@/hooks/sesion/useUserData";
 import { createClient } from "@/utils/supabase/client";
 
+type NivelCompromiso = "bajo" | "medio" | "alto";
+
 interface RolDisponible {
   id: number;
   nombre: string;
@@ -29,6 +31,7 @@ export function SignupForm({
   isModal = false,
   initialData,
 }: SignupFormProps) {
+  const nivelesCompromiso: NivelCompromiso[] = ["bajo", "medio", "alto"];
   const router = useRouter();
   const isEdit = !!initialData;
   const { rol: rolUsuarioSesion } = useUserData();
@@ -47,6 +50,12 @@ export function SignupForm({
   const [rol_id, setRolId] = useState<string>(
     initialData?.rol_id?.toString() || "",
   );
+  const initialNivel = initialData?.nivel_compromiso;
+  const nivelInicialValido: NivelCompromiso =
+    initialNivel === "bajo" || initialNivel === "medio" || initialNivel === "alto"
+      ? initialNivel
+      : "medio";
+  const [nivelCompromiso, setNivelCompromiso] = useState<NivelCompromiso>(nivelInicialValido);
 
   const nombresValido = nombres.trim() !== "";
   const apellidosValido = apellidos.trim() !== "";
@@ -74,6 +83,13 @@ export function SignupForm({
     cumpleRequisitos;
 
   useEffect(() => {
+    const nextNivel = initialData?.nivel_compromiso;
+    setNivelCompromiso(
+      nextNivel === "bajo" || nextNivel === "medio" || nextNivel === "alto"
+        ? nextNivel
+        : "medio",
+    );
+
     const fetchDatos = async () => {
       const supabase = createClient();
       const { data: r } = await supabase.from("roles").select("id, nombre");
@@ -197,6 +213,91 @@ export function SignupForm({
             ))}
           </select>
         </div>
+
+        {isEdit && (
+          <div
+            className={`border rounded-md p-4 mt-1 transition-colors ${
+              nivelCompromiso === "bajo"
+                ? "bg-red-50 border-red-200"
+                : nivelCompromiso === "medio"
+                  ? "bg-yellow-50 border-yellow-200"
+                  : "bg-green-50 border-green-200"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <Label
+                className={
+                  nivelCompromiso === "bajo"
+                    ? "text-red-700"
+                    : nivelCompromiso === "medio"
+                      ? "text-yellow-700"
+                      : "text-green-700"
+                }
+              >
+                Nivel de compromiso
+              </Label>
+              <span
+                className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${
+                  nivelCompromiso === "bajo"
+                    ? "bg-red-100 text-red-700"
+                    : nivelCompromiso === "medio"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-green-100 text-green-700"
+                }`}
+              >
+                {nivelCompromiso}
+              </span>
+            </div>
+
+            <input
+              type="hidden"
+              name="nivel_compromiso"
+              value={nivelCompromiso}
+            />
+
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {nivelesCompromiso.map((nivel) => (
+                <label
+                  key={nivel}
+                  className={`flex items-center justify-center gap-2 border rounded-lg px-3 py-2 cursor-pointer transition-all uppercase font-bold text-xs ${
+                    nivel === "bajo"
+                      ? "bg-red-50 border-red-300 text-red-700"
+                      : nivel === "medio"
+                        ? "bg-yellow-50 border-yellow-300 text-yellow-700"
+                        : "bg-green-50 border-green-300 text-green-700"
+                  } ${
+                    nivelCompromiso === nivel
+                      ? nivel === "bajo"
+                        ? "border-2 border-red-700 scale-[1.02]"
+                        : nivel === "medio"
+                          ? "border-2 border-yellow-700 scale-[1.02]"
+                          : "border-2 border-green-700 scale-[1.02]"
+                      : "opacity-90 hover:opacity-100"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="nivel_compromiso_radio"
+                    value={nivel}
+                    checked={nivelCompromiso === nivel}
+                    onChange={() => setNivelCompromiso(nivel)}
+                    className="sr-only"
+                  />
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      nivel === "bajo"
+                        ? "bg-red-500"
+                        : nivel === "medio"
+                          ? "bg-yellow-500"
+                          : "bg-green-500"
+                    }`}
+                  />
+                  {nivel}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="border rounded-md p-4 bg-gray-50 mt-4">
           {isEdit ? (

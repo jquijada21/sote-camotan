@@ -6,6 +6,7 @@ export interface Lider {
   nombres: string;
   apellidos: string;
   rol: string;
+  nivel_compromiso?: "bajo" | "medio" | "alto" | null;
   conteoAfiliados?: number;
 }
 

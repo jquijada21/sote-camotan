@@ -49,6 +49,13 @@ export const updateUsuarioAction = async (formData: FormData) => {
   const email = formData.get("email") as string;
   const rol_id = formData.get("rol_id") as string;
   const password = formData.get("password") as string;
+  const nivelCompromisoRaw = formData.get("nivel_compromiso");
+  const nivel_compromiso =
+    nivelCompromisoRaw === "bajo" ||
+    nivelCompromisoRaw === "medio" ||
+    nivelCompromisoRaw === "alto"
+      ? nivelCompromisoRaw
+      : null;
 
   // Actualizamos solo lo que quedó en info_perfil
   const { error: updateError } = await supabase
@@ -57,6 +64,7 @@ export const updateUsuarioAction = async (formData: FormData) => {
       nombres,
       apellidos,
       rol_id: parseInt(rol_id),
+      nivel_compromiso,
     })
     .eq("user_id", id);
 

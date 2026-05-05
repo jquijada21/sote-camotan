@@ -38,6 +38,7 @@ export const afiliadoSchema = z.object({
   religion: z.string().min(1, "Religión es requerida"),
   religion_otra: z.string().optional(),
   condicion_especial: z.string().optional().nullable(),
+  familiar: z.boolean().optional().default(false),
 });
 
 export interface Afiliado extends AfiliadoFormData {
@@ -52,6 +53,7 @@ export interface Afiliado extends AfiliadoFormData {
   telefono2?: string | null;
   telefono3?: string | null;
   condicion_especial?: string | null;
+  familiar?: boolean | null;
 }
 
 export type AfiliadoFormData = z.infer<typeof afiliadoSchema>;

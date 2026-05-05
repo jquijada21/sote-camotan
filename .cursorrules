@@ -1,0 +1,9 @@
+# Cursor Custom Rules
+
+- Generate pure code only.
+- NO comments inside the code.
+- NO explanations, intros, or outros in the response.
+- Use TypeScript with strict typing.
+- Prefer clean, modular, and functional patterns.
+- Follow Serverless Full Stack best practices (Next.js, Supabase, Tailwind).
+- If the task is a refactor, provide only the affected code blocks.

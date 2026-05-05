@@ -249,7 +249,7 @@ export default function AfiliadosForm({
   const esAdmin = rol_id === 1 || rol_id === 2;
 
   const isEditMode = !!afiliadoAEditar;
-  const [step, setStep] = useState(isEditMode ? 2 : 1);
+  const [step, setStep] = useState(isEditMode || isFirstMember ? 2 : 1);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [mostrandoNuevaReligion, setMostrandoNuevaReligion] = useState(false);
   const [mostrandoNuevoSub, setMostrandoNuevoSub] = useState(false);
@@ -275,6 +275,7 @@ export default function AfiliadosForm({
   const sexoActual = watch("sexo");
   const religionActual = watch("religion");
   const dpiActual = watch("dpi");
+  const familiarActual = watch("familiar");
   const buscador = useBuscadorLider(lideres, setValue);
   const [buscandoDpi, setBuscandoDpi] = useState(false);
   const [padronStatus, setPadronStatus] = useState<"none" | "found" | "not_found">("none");
@@ -334,11 +335,11 @@ export default function AfiliadosForm({
   };
 
   useEffect(() => {
-    if (isEditMode) setStep(2);
+    if (isEditMode || isFirstMember) setStep(2);
     else setStep(1);
     setPadronStatus("none");
     setYaRegistrado(null);
-  }, [isOpen, isEditMode]);
+  }, [isOpen, isEditMode, isFirstMember]);
 
   useInicializarFormulario(
     isOpen,
@@ -595,8 +596,6 @@ export default function AfiliadosForm({
                   <Input
                     {...register("nombres")}
                     placeholder="Nombres"
-                    readOnly={isFirstMember}
-                    className={isFirstMember ? "bg-gray-100" : ""}
                   />
                   {errors.nombres && <p className="text-[10px] text-red-500">{errors.nombres.message}</p>}
                 </div>
@@ -605,8 +604,6 @@ export default function AfiliadosForm({
                   <Input
                     {...register("apellidos")}
                     placeholder="Apellidos"
-                    readOnly={isFirstMember}
-                    className={isFirstMember ? "bg-gray-100" : ""}
                   />
                   {errors.apellidos && <p className="text-[10px] text-red-500">{errors.apellidos.message}</p>}
                 </div>
@@ -615,13 +612,13 @@ export default function AfiliadosForm({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-green-600 uppercase">Teléfono (Whatsapp)</label>
-                  <Input {...register("telefono")} placeholder="Teléfono" />
+                  <Input {...register("telefono")} placeholder="Teléfono" type="tel" inputMode="numeric" />
                   {errors.telefono && <p className="text-[10px] text-red-500">{errors.telefono.message}</p>}
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-blue-600 uppercase">DPI</label>
                   <div className="relative">
-                    <Input {...register("dpi")} placeholder="DPI" readOnly={!isEditMode} className={!isEditMode ? "bg-gray-100" : ""} />
+                    <Input {...register("dpi")} placeholder="DPI" readOnly={!isEditMode && !isFirstMember} className={!isEditMode && !isFirstMember ? "bg-gray-100" : ""} />
                     {padronStatus === "found" && !isEditMode && <Check className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />}
                   </div>
                   {errors.dpi && <p className="text-[10px] text-red-500">{errors.dpi.message}</p>}
@@ -631,12 +628,12 @@ export default function AfiliadosForm({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Teléfono 2 (Opcional)</label>
-                  <Input {...register("telefono2")} placeholder="Teléfono alternativo" />
+                  <Input {...register("telefono2")} placeholder="Teléfono alternativo" type="tel" inputMode="numeric" />
                   {errors.telefono2 && <p className="text-[10px] text-red-500">{errors.telefono2.message}</p>}
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Teléfono 3 (Opcional)</label>
-                  <Input {...register("telefono3")} placeholder="Teléfono alternativo" />
+                  <Input {...register("telefono3")} placeholder="Teléfono alternativo" type="tel" inputMode="numeric" />
                   {errors.telefono3 && <p className="text-[10px] text-red-500">{errors.telefono3.message}</p>}
                 </div>
               </div>
@@ -695,8 +692,8 @@ export default function AfiliadosForm({
                 {errors.lugar_id && (
                   <p className="text-[10px] text-red-500">{errors.lugar_id.message}</p>
                 )}
-                <p className="text-[9px] text-gray-400 italic">
-                  Si el lugar no existe, comunícate con un administrador para crearlo.
+                <p className="text-base font-semibold text-blue-500">
+                  Si el lugar no aparece, comunícate con administración.
                 </p>
               </div>
 
@@ -927,8 +924,29 @@ export default function AfiliadosForm({
                 </select>
               </div>
 
+              {/* FAMILIAR */}
+              {!isFirstMember && <div className="flex items-center justify-between rounded-lg border px-4 py-3 bg-gray-50">
+                <div>
+                  <p className="text-[10px] font-bold text-rose-600 uppercase">Familiar</p>
+                  <p className="text-[10px] text-gray-400">Marcar si el afiliado es un familiar</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setValue("familiar", !familiarActual)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                    familiarActual ? "bg-rose-500" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                      familiarActual ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>}
+
               <div className="flex justify-between items-center pt-4 border-t mt-2">
-                {step === 2 && !isEditMode && (
+                {step === 2 && !isEditMode && !isFirstMember && (
                   <Button
                     type="button"
                     variant="ghost"

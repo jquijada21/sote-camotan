@@ -14,6 +14,7 @@ export async function listarUsuariosAction(rol_filtro?: string | string[]) {
       apellidos, 
       activo, 
       rol_id,
+      nivel_compromiso,
       roles!inner ( id, nombre )
     `)
     .order("nombres", { ascending: true });
@@ -59,6 +60,7 @@ export async function listarUsuariosAction(rol_filtro?: string | string[]) {
     activo: p.activo,
     rol: p.roles?.nombre,
     rol_id: p.rol_id,
+    nivel_compromiso: p.nivel_compromiso,
     conteoAfiliados: conteoMap.get(p.user_id) || 0,
   }));
 }
