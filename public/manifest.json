@@ -1,12 +1,12 @@
 {
-  "name": "SOTE - Sistema de Organización Territorial Estratégica, Morales, Izabal",
-  "short_name": "SOTE Morales, Izabal",
+  "name": "SOTE - Sistema de Organización Territorial Estratégica, San Jorge, Zacapa",
+  "short_name": "SOTE San Jorge, Zacapa",
   "theme_color": "#1e40af",
   "background_color": "#ffffff",
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
-  "description": "Sistema de Gestión y Organización territorial Estratégica, Morales, Izabal",
+  "description": "Sistema de Gestión y Organización territorial Estratégica, San Jorge, Zacapa",
   "orientation": "portrait",
   "icons": [
     {
