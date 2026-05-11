@@ -12,6 +12,8 @@ import {
   Eye,
   ChevronDown,
   Lock,
+  User,
+  Heart,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { eliminar } from "./acciones";
@@ -26,6 +28,8 @@ export interface Lider {
   rol: string;
   rol_id?: number;
   conteoAfiliados?: number;
+  conteoTitulares?: number;
+  conteoFamiliares?: number;
 }
 
 interface Props {
@@ -47,7 +51,7 @@ function LideresSkeleton({ esAdminOSuper }: { esAdminOSuper: boolean }) {
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="h-20 bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
+          className="h-20 bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4"
         >
           <div className="h-10 w-10 bg-gray-100 rounded-lg"></div>
           <div className="flex-1 space-y-2">
@@ -199,7 +203,7 @@ export default function Lideres({
           return (
             <div
               key={lider.id}
-              className={`flex flex-col md:flex-row items-stretch md:items-center border rounded-xl overflow-hidden shadow-sm transition-all duration-300 ${getRowClass(lider)}`}
+              className={`flex flex-col md:flex-row items-stretch md:items-center border rounded-lg overflow-hidden shadow-sm transition-all duration-300 ${getRowClass(lider)}`}
             >
               {/* Contenedor Principal */}
               <div 
@@ -239,7 +243,21 @@ export default function Lideres({
                 <div className="flex-1 md:max-w-none w-full">
                    <div className="flex justify-between items-end mb-1">
                       <span className="text-xs font-black text-gray-400 uppercase">Progreso de Célula</span>
-                      <span className="text-base md:text-lg font-black text-blue-700">{totalEnGrupo}/{META_POR_LIDER}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 bg-blue-50 px-2 py-1 rounded-md border border-blue-100 shadow-sm" title="Titulares">
+                          <User className="w-3.5 h-3.5 text-blue-600" />
+                          <span className="hidden md:inline text-[10px] font-black text-blue-600 uppercase">Titulares</span>
+                          <span className="text-sm font-black text-blue-700">{lider.conteoTitulares || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-purple-50 px-2 py-1 rounded-md border border-purple-100 shadow-sm" title="Familiares">
+                          <Heart className="w-3.5 h-3.5 text-purple-600" />
+                          <span className="hidden md:inline text-[10px] font-black text-purple-600 uppercase">Familiares</span>
+                          <span className="text-sm font-black text-purple-700">{lider.conteoFamiliares || 0}</span>
+                        </div>
+                        <span className="text-xs md:text-sm font-black text-gray-500 ml-1 whitespace-nowrap">
+                          Total <span className="text-blue-700 font-black">{totalEnGrupo}</span> de <span className="text-gray-400 font-bold">{META_POR_LIDER}</span>
+                        </span>
+                      </div>
                    </div>
                    <div className="w-full bg-gray-100 rounded-full h-4 border overflow-hidden">
                       <motion.div
@@ -352,19 +370,19 @@ export default function Lideres({
           <Button
             size="sm"
             variant="outline"
-            className="w-10 h-10 rounded-xl border-gray-200 hover:bg-blue-50 text-blue-600 transition-all shadow-sm"
+            className="w-10 h-10 rounded-lg border-gray-200 hover:bg-blue-50 text-blue-600 transition-all shadow-sm"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1 || itemsPerPage === "all"}
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm min-w-[120px] text-center">
+          <div className="bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm min-w-[120px] text-center">
             <span className="text-sm font-black text-gray-900">{currentPage} / {totalPages || 1}</span>
           </div>
           <Button
             size="sm"
             variant="outline"
-            className="w-10 h-10 rounded-xl border-gray-200 hover:bg-blue-50 text-blue-600 transition-all shadow-sm"
+            className="w-10 h-10 rounded-lg border-gray-200 hover:bg-blue-50 text-blue-600 transition-all shadow-sm"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || itemsPerPage === "all"}
           >
@@ -372,7 +390,7 @@ export default function Lideres({
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm">
           <select
             value={itemsPerPage}
             onChange={(e) => {

@@ -31,7 +31,7 @@ export function useAfiliadosForm() {
       religion: "",
       religion_otra: "",
       condicion_especial: null,
-      familiar: false,
+      familiar_de: null,
       beneficio_id: null,
       empadronado: false,
     },
@@ -48,6 +48,7 @@ export function useInicializarFormulario(
   setShowLiderSuggestions: (val: boolean) => void,
   isFirstMember: boolean = false,
   datosLider: any | null = null,
+  familiarDeId: string | null = null,
 ) {
   useEffect(() => {
     if (isOpen) {
@@ -64,6 +65,7 @@ export function useInicializarFormulario(
           politica_id: (afiliadoAEditar as any).politica_id || null,
           sub_politica_id: (afiliadoAEditar as any).sub_politica_id || null,
           condicion_especial: afiliadoAEditar.condicion_especial || null,
+          familiar_de: afiliadoAEditar.familiar_de || null,
         } as AfiliadoFormData);
 
         const currentLider = lideres.find(
@@ -96,7 +98,7 @@ export function useInicializarFormulario(
           religion: "",
           religion_otra: "",
           condicion_especial: null,
-          familiar: false,
+          familiar_de: familiarDeId || null,
           beneficio_id: null,
           empadronado: false,
         });
@@ -110,7 +112,7 @@ export function useInicializarFormulario(
       }
       setShowLiderSuggestions(false);
     }
-  }, [isOpen, afiliadoAEditar, liderPredefinidoId, methods, lideres, setLiderSearch, setShowLiderSuggestions, isFirstMember, datosLider]);
+  }, [isOpen, afiliadoAEditar, liderPredefinidoId, methods, lideres, setLiderSearch, setShowLiderSuggestions, isFirstMember, datosLider, familiarDeId]);
 }
 
 export function useBuscadorLider(lideres: Lider[], setValue: any) {

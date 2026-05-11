@@ -8,6 +8,8 @@ export interface Lider {
   rol: string;
   nivel_compromiso?: "bajo" | "medio" | "alto" | null;
   conteoAfiliados?: number;
+  conteoTitulares?: number;
+  conteoFamiliares?: number;
 }
 
 export const POLITICAS = [
@@ -78,7 +80,7 @@ export interface Afiliado extends AfiliadoFormData {
   telefono2?: string | null;
   telefono3?: string | null;
   condicion_especial?: string | null;
-  familiar?: boolean | null;
+  familiar_de?: string | null;
   es_lider?: boolean | null;
   img?: string | null;
   dpi_frontal_url?: string | null;

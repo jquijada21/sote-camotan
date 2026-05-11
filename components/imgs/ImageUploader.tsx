@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
-import { Loader2, Upload, RefreshCw, Trash2, Camera } from "lucide-react";
+import { Loader2, Upload, RefreshCw, Trash2, Camera, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 
 import { createClient } from "@/utils/supabase/client";
@@ -40,6 +41,7 @@ export default function ImageUploader({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editingFile, setEditingFile] = useState<File | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,69 +182,86 @@ export default function ImageUploader({
       />
 
       {currentImagePath ? (
-        <div className="flex flex-col gap-3">
-          <div className="relative w-full bg-gray-50 border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center min-h-[260px] max-h-[460px]">
+        <div className="flex flex-col">
+          <div
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`cursor-pointer group relative w-full bg-gray-50 border transition-all duration-500 rounded-lg overflow-hidden flex items-center justify-center min-h-[160px] max-h-[260px] ${isExpanded ? 'border-blue-400 ring-4 ring-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
+          >
             {previewLoading ? (
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             ) : previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={previewUrl}
                 alt="Imagen subida"
-                className="max-h-[460px] w-auto object-contain"
+                className="max-h-[260px] w-auto object-contain transition-transform duration-700"
               />
             ) : (
               <p className="text-xs text-gray-400 font-bold uppercase px-4 text-center">
                 No se pudo cargar la vista previa.
               </p>
             )}
+
             {isProcessing && (
-              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               </div>
             )}
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={triggerSelect}
-              disabled={isLocked}
-              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-md bg-blue-600 text-white text-xs font-bold uppercase hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {isProcessing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              Galería
-            </button>
-            <button
-              type="button"
-              onClick={triggerCamera}
-              disabled={isLocked}
-              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-md bg-green-600 text-white text-xs font-bold uppercase hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {isProcessing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Camera className="w-4 h-4" />
-              )}
-              Cámara
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isLocked}
-              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-md bg-red-600 text-white text-xs font-bold uppercase hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {isProcessing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
-              Eliminar
-            </button>
-          </div>
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center w-full bg-white border border-gray-100 rounded-lg overflow-hidden shadow-lg mt-3 h-14">
+
+                  <div className="flex-[3.5] flex items-center px-5 gap-6 h-full bg-blue-50/30">
+                    <span className="text-[11px] font-black text-purple-600 uppercase tracking-widest shrink-0">Reemplazar:</span>
+                    <div className="flex items-center gap-3 flex-1">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); triggerSelect(); }}
+                        disabled={isLocked}
+                        className="flex-1 inline-flex items-center justify-center gap-2 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-100/50 py-2.5 rounded-lg transition-all active:scale-95"
+                      >
+                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                        Galería
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); triggerCamera(); }}
+                        disabled={isLocked}
+                        className="flex-1 inline-flex items-center justify-center gap-2 text-green-600 text-[10px] font-black uppercase hover:bg-green-100/50 py-2.5 rounded-lg transition-all active:scale-95"
+                      >
+                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-4 h-4" />}
+                        Cámara
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Separador sutil */}
+                  <div className="w-[1px] h-8 bg-gray-200 shrink-0" />
+
+                  {/* Sección Eliminar (1/4) */}
+                  <div className="flex-1 flex items-center justify-center h-full">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+                      disabled={isLocked}
+                      className="w-full h-full inline-flex items-center justify-center gap-2 text-red-600 text-[10px] font-black uppercase hover:bg-red-50 transition-all active:scale-95"
+                    >
+                      {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      Borrar
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       ) : (
         <div className="w-full border-2 border-dashed border-gray-300 rounded-lg py-8 px-4 flex flex-col items-center justify-center gap-4">
@@ -254,23 +273,23 @@ export default function ImageUploader({
           ) : (
             <>
               <p className="text-xs font-bold uppercase text-gray-400">Selecciona una opción</p>
-              <div className="flex gap-3 w-full">
+              <div className="flex gap-4 w-full">
                 <button
                   type="button"
                   onClick={triggerSelect}
                   disabled={isLocked}
-                  className="flex-1 inline-flex flex-col items-center justify-center gap-2 py-5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="flex-1 inline-flex flex-col items-center justify-center gap-3 py-6 rounded-lg bg-blue-50/50 border-2 border-blue-100 text-blue-700 text-xs font-black uppercase hover:bg-blue-100 hover:border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
                 >
-                  <Upload className="w-7 h-7" />
+                  <ImageIcon className="w-8 h-8" />
                   Galería
                 </button>
                 <button
                   type="button"
                   onClick={triggerCamera}
                   disabled={isLocked}
-                  className="flex-1 inline-flex flex-col items-center justify-center gap-2 py-5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-xs font-bold uppercase hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="flex-1 inline-flex flex-col items-center justify-center gap-3 py-6 rounded-lg bg-green-50/50 border-2 border-green-100 text-green-700 text-xs font-black uppercase hover:bg-green-100 hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
                 >
-                  <Camera className="w-7 h-7" />
+                  <Camera className="w-8 h-8" />
                   Cámara
                 </button>
               </div>

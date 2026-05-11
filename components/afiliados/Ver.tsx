@@ -60,6 +60,7 @@ export default function Ver() {
   const [liderParaNuevoAfiliado, setLiderParaNuevoAfiliado] = useState<
     string | null
   >(null);
+  const [familiarDeIdParaNuevo, setFamiliarDeIdParaNuevo] = useState<string | null>(null);
 
   const [isFirstMemberAddition, setIsFirstMemberAddition] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -162,11 +163,13 @@ export default function Ver() {
   const handleOpenAnadirAfiliadoModal = (
     liderId: string,
     isFirstMember = false,
+    familiarDeId: string | null = null,
   ) => {
     setIsCelulaOpen(false);
     setAfiliadoParaEditar(null);
     setLiderParaNuevoAfiliado(liderId);
     setIsFirstMemberAddition(isFirstMember);
+    setFamiliarDeIdParaNuevo(familiarDeId);
     setIsFormOpen(true);
   };
 
@@ -174,6 +177,7 @@ export default function Ver() {
     setIsCelulaOpen(false);
     setAfiliadoParaEditar(afiliado);
     setLiderParaNuevoAfiliado(null);
+    setFamiliarDeIdParaNuevo(null);
     setIsFirstMemberAddition(false);
     setIsFormOpen(true);
   };
@@ -416,6 +420,7 @@ export default function Ver() {
         lideres={lideres}
         afiliados={afiliados}
         isFirstMember={isFirstMemberAddition}
+        familiarDeId={familiarDeIdParaNuevo}
         datosLider={lideres.find((l) => l.id === liderParaNuevoAfiliado)}
       />
 

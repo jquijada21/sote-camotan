@@ -143,7 +143,7 @@ export default function GestionDpiModal({
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
         </TransitionChild>
 
-        <div className="fixed inset-0 flex items-center justify-center p-3 sm:p-6">
+        <div className="fixed inset-0 flex items-center justify-center p-0 sm:p-6">
           <TransitionChild
             as={Fragment}
             enter="ease-out duration-200"
@@ -153,8 +153,8 @@ export default function GestionDpiModal({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <DialogPanel className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
-              <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
+            <DialogPanel className="w-screen h-screen sm:w-full sm:max-w-lg bg-white sm:rounded-lg shadow-2xl overflow-hidden flex flex-col sm:max-h-[90vh]">
+              <div className="flex items-center justify-between px-3 md:px-5 py-3 md:py-4 border-b bg-gray-50">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="bg-green-100 text-green-700 p-2 rounded-lg shrink-0">
                     <IdCard className="w-5 h-5" />
@@ -164,9 +164,14 @@ export default function GestionDpiModal({
                       Gestionar DPI
                     </h2>
                     {afiliado && (
-                      <p className="text-[11px] text-gray-500 font-bold uppercase truncate">
-                        {afiliado.nombres} {afiliado.apellidos}
-                      </p>
+                      <div className="flex flex-col">
+                        <p className="text-[11px] text-gray-500 font-bold uppercase truncate">
+                          {afiliado.nombres} {afiliado.apellidos}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-mono font-bold tracking-wider mt-0.5">
+                          DPI: {afiliado.dpi}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -174,15 +179,15 @@ export default function GestionDpiModal({
                   type="button"
                   onClick={() => !isMutating && onClose()}
                   disabled={isMutating}
-                  className="p-1.5 rounded-full hover:bg-gray-200 transition disabled:opacity-50"
+                  className="text-blue-600 font-bold hover:underline text-sm uppercase px-4 py-2 shrink-0 disabled:opacity-50"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  Cerrar
                 </button>
               </div>
 
-              <div className="relative p-5 overflow-y-auto">
+              <div className="relative p-4 md:p-5 overflow-y-auto flex-1">
                 {afiliado && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 gap-6 max-w-xl mx-auto w-full">
                     <section className="flex flex-col gap-2">
                       <header className="flex items-center justify-between">
                         <h3 className="text-xs font-black uppercase text-gray-700">
@@ -263,34 +268,26 @@ export default function GestionDpiModal({
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-stretch gap-2 px-5 py-4 border-t bg-gray-50">
+              <div className="flex flex-row items-center gap-2 px-3 md:px-5 py-4 md:py-5 border-t bg-gray-50 shrink-0">
                 <button
                   type="button"
                   onClick={handleDownloadPdf}
                   disabled={!tieneAlgunDpi || isMutating}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-red-600 text-white text-xs font-bold uppercase hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 md:px-6 h-11 rounded-lg border-2 border-red-200 bg-white text-red-600 text-[10px] md:text-xs font-black uppercase hover:bg-red-50 hover:border-red-300 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
                   title={!tieneAlgunDpi ? "Sube al menos una imagen del DPI" : "Descargar PDF"}
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5 md:w-4 h-4" />
                   PDF
                 </button>
                 <button
                   type="button"
                   onClick={handleDownloadImg}
                   disabled={!tieneAlgunDpi || isMutating}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white text-xs font-bold uppercase hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 md:px-6 h-11 rounded-lg border-2 border-blue-200 bg-white text-blue-600 text-[10px] md:text-xs font-black uppercase hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
                   title={!tieneAlgunDpi ? "Sube al menos una imagen del DPI" : "Descargar IMG"}
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5 md:w-4 h-4" />
                   IMG
-                </button>
-                <button
-                  type="button"
-                  onClick={() => !isMutating && onClose()}
-                  disabled={isMutating}
-                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 text-xs font-bold uppercase hover:bg-gray-100 transition disabled:opacity-50"
-                >
-                  Cerrar
                 </button>
               </div>
             </DialogPanel>

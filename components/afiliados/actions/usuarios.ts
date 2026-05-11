@@ -20,7 +20,7 @@ export async function listarUsuariosAction(rol_filtro?: string | string[]) {
     .order("nombres", { ascending: true });
 
   let filtroPerfiles = queryPerfiles;
-  
+
   if (rol_filtro) {
     if (Array.isArray(rol_filtro)) {
       filtroPerfiles = queryPerfiles.in("roles.nombre", rol_filtro);
@@ -33,7 +33,7 @@ export async function listarUsuariosAction(rol_filtro?: string | string[]) {
   const [perfilesRes, authRes, conteoRes] = await Promise.all([
     filtroPerfiles,
     supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }).catch(() => ({ data: { users: [] } })),
-    supabase.from("afiliados").select("lider_id")
+    supabase.from("afiliados").select("lider_id, familiar_de")
   ]);
 
   if (perfilesRes.error) throw new Error(perfilesRes.error.message);
@@ -43,10 +43,17 @@ export async function listarUsuariosAction(rol_filtro?: string | string[]) {
   const users = (authRes as any)?.data?.users || [];
   const conteoRaw = conteoRes.data || [];
 
-  const conteoMap = new Map();
+  const conteoMap = new Map<string, { total: number; titulares: number; familiares: number }>();
   conteoRaw.forEach((row) => {
     if (row.lider_id) {
-      conteoMap.set(row.lider_id, (conteoMap.get(row.lider_id) || 0) + 1);
+      const current = conteoMap.get(row.lider_id) || { total: 0, titulares: 0, familiares: 0 };
+      current.total++;
+      if (row.familiar_de) {
+        current.familiares++;
+      } else {
+        current.titulares++;
+      }
+      conteoMap.set(row.lider_id, current);
     }
   });
 
@@ -61,6 +68,9 @@ export async function listarUsuariosAction(rol_filtro?: string | string[]) {
     rol: p.roles?.nombre,
     rol_id: p.rol_id,
     nivel_compromiso: p.nivel_compromiso,
-    conteoAfiliados: conteoMap.get(p.user_id) || 0,
+    conteoAfiliados: conteoMap.get(p.user_id)?.total || 0,
+    conteoTitulares: conteoMap.get(p.user_id)?.titulares || 0,
+    conteoFamiliares: conteoMap.get(p.user_id)?.familiares || 0,
   }));
+
 }

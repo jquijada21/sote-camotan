@@ -18,12 +18,12 @@ interface Props {
   onClose: () => void;
   lider: Lider | null;
   onEditar: (afiliado: Afiliado) => void;
-  onAnadirAfiliado: (liderId: string, isFirstMember?: boolean) => void;
+  onAnadirAfiliado: (liderId: string, isFirstMember?: boolean, familiarDeId?: string) => void;
   onDataChange: () => void;
   rolUsuarioSesion: string;
 }
 
-type Vista = "miembros" | "familiares" | "estadisticas";
+type Vista = "miembros" | "estadisticas";
 
 export default function Celula({
   isOpen,
@@ -57,7 +57,7 @@ export default function Celula({
     ? afiliadosDelLider.filter((a: Afiliado) => a.id !== liderAfiliado.id)
     : afiliadosDelLider;
 
-  const totalEnGrupo = afiliadosDelLider.length;
+  const totalEnGrupo = afiliadosDelLider.filter((a: Afiliado) => !a.familiar_de).length;
   const objetivo = config?.meta_por_lider || 0;
   const progreso = Math.min((totalEnGrupo / objetivo) * 100, 100);
 
@@ -88,26 +88,20 @@ export default function Celula({
     gifUrl = "/gif/afiliados/gif5.gif";
   }
 
-  const afiliadosSoloMiembros = restantesAfiliados.filter(
-    (a: Afiliado) => !a.familiar,
-  );
-  const afiliadosFamiliares = restantesAfiliados.filter(
-    (a: Afiliado) => !!a.familiar,
-  );
+  const familiares = restantesAfiliados.filter((a: Afiliado) => !!a.familiar_de);
 
-  const afiliadosFiltradosMiembros =
+  const afiliadosFiltrados =
     busqueda.length >= 2
-      ? afiliadosSoloMiembros.filter(
+      ? restantesAfiliados.filter(
           (a: Afiliado) =>
             a.nombres.toLowerCase().includes(busqueda.toLowerCase()) ||
             a.apellidos.toLowerCase().includes(busqueda.toLowerCase()) ||
             a.dpi.includes(busqueda),
         )
-      : afiliadosSoloMiembros;
+      : restantesAfiliados;
 
   const TABS = [
     { id: "miembros", label: "Miembros", icon: Users },
-    { id: "familiares", label: "Familiares", icon: Heart },
     { id: "estadisticas", label: "Estadísticas", icon: BarChart3 },
   ];
 
@@ -150,14 +144,12 @@ export default function Celula({
                   )}
                 </div>
 
-                <Button
+                <button
                   onClick={onClose}
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full shrink-0 h-9 w-9 hover:bg-gray-100 ml-2"
+                  className="text-blue-600 font-bold hover:underline text-sm uppercase px-4 py-2 shrink-0"
                 >
-                  <X className="w-5 h-5 text-gray-700" />
-                </Button>
+                  Cerrar
+                </button>
               </div>
 
               <div className="px-2 py-2 border-b bg-gray-50 flex justify-center">
@@ -272,43 +264,14 @@ export default function Celula({
 
                       <Tabla
                         lider={lider}
-                        afiliados={afiliadosFiltradosMiembros}
+                        afiliados={afiliadosFiltrados}
                         onEditar={onEditar}
+                        onAnadirFamiliar={(titularId) => onAnadirAfiliado(lider.id, false, titularId)}
                         onDataChange={onDataChange}
                         rolUsuarioSesion={rolUsuarioSesion}
                         config={config}
                         totalEnCelula={totalEnGrupo}
                       />
-                    </>
-                  ) : vistaActual === "familiares" ? (
-                    <>
-                      <div className="flex items-center gap-2 py-3 px-1 border-b mb-3">
-                        <Heart className="w-4 h-4 text-purple-500 shrink-0" />
-                        <p className="text-xs font-bold text-gray-600 uppercase">
-                          Líder y familia —{" "}
-                          <span className="text-purple-600">
-                            {[liderAfiliado, ...afiliadosFamiliares].filter(Boolean).length} integrante
-                            {[liderAfiliado, ...afiliadosFamiliares].filter(Boolean).length !== 1 ? "s" : ""}
-                          </span>
-                        </p>
-                      </div>
-
-                      {[liderAfiliado, ...afiliadosFamiliares].filter(Boolean).length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
-                          <Heart className="w-10 h-10" />
-                          <p className="text-sm font-bold uppercase">Sin integrantes registrados</p>
-                        </div>
-                      ) : (
-                        <Tabla
-                          lider={lider}
-                          afiliados={[liderAfiliado, ...afiliadosFamiliares].filter(Boolean) as Afiliado[]}
-                          onEditar={onEditar}
-                          onDataChange={onDataChange}
-                          rolUsuarioSesion={rolUsuarioSesion}
-                          config={config}
-                          totalEnCelula={totalEnGrupo}
-                        />
-                      )}
                     </>
                   ) : (
                     <div className="w-full pt-4">

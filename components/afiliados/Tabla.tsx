@@ -15,37 +15,50 @@ import {
   Heart,
   Eye,
   Download,
+  UserPlus,
+  Users,
 } from "lucide-react";
 
 import { eliminar } from "./acciones";
 import type { Afiliado, Lider } from "./esquemas";
 import GestionDpiModal from "./GestionDpiModal";
-import VerDpiModal from "./VerDpiModal";
+import { Dialog, Transition, TransitionChild, DialogPanel } from "@headlessui/react";
+import { Fragment } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   lider: Lider;
   afiliados: Afiliado[];
   onEditar: (afiliado: Afiliado) => void;
+  onAnadirFamiliar?: (titularId: string) => void;
   onDataChange: () => void;
   rolUsuarioSesion: string;
   config?: any;
   totalEnCelula?: number;
+  isFamilyView?: boolean;
 }
 
 export default function Tabla({
   lider,
   afiliados,
   onEditar,
+  onAnadirFamiliar,
   onDataChange,
   rolUsuarioSesion,
   config,
   totalEnCelula,
+  isFamilyView = false,
 }: Props) {
   const puedeVerAcciones = true;
   const totalAfiliados = totalEnCelula ?? afiliados.length;
 
-  const [verDpiAfiliado, setVerDpiAfiliado] = useState<Afiliado | null>(null);
   const [gestionDpiAfiliado, setGestionDpiAfiliado] = useState<Afiliado | null>(null);
+  const [titularVerFamilia, setTitularVerFamilia] = useState<Afiliado | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId(prev => prev === id ? null : id);
+  };
 
   const descargarCarnet = (afiliado: Afiliado) => {
     const canvas = document.createElement("canvas");
@@ -111,12 +124,12 @@ export default function Tabla({
     link.click();
   };
 
-  const obtenerColorDpi = (afiliado: Afiliado) => {
-    const f = !!afiliado.dpi_frontal_url;
-    const r = !!afiliado.dpi_reverso_url;
-    if (f && r) return "bg-green-600 hover:bg-green-700";
-    if (f || r) return "bg-amber-500 hover:bg-amber-600";
-    return "bg-gray-400 hover:bg-gray-500";
+  const obtenerDpiInfo = (afiliado: Afiliado) => {
+    const hasDpi = !!afiliado.dpi_frontal_url || !!afiliado.dpi_reverso_url;
+    return {
+      color: hasDpi ? "bg-green-600 hover:bg-green-700" : "bg-purple-600 hover:bg-purple-700",
+      label: hasDpi ? "Ver DPI" : "Cargar DPI"
+    };
   };
 
   if (afiliados.length === 0) {
@@ -165,25 +178,39 @@ export default function Tabla({
     return `${diaSemana} ${dia}/${mes}/${anio}, ${horasStr}:${minutos} ${ampm}`;
   };
 
+  const titulares = isFamilyView ? afiliados : afiliados.filter((a) => !a.familiar_de);
+  const familiaresPorTitular = new Map<string, Afiliado[]>();
+  
+  if (!isFamilyView) {
+    afiliados.forEach(a => {
+      if (a.familiar_de) {
+        if (!familiaresPorTitular.has(a.familiar_de)) familiaresPorTitular.set(a.familiar_de, []);
+        familiaresPorTitular.get(a.familiar_de)!.push(a);
+      }
+    });
+  }
+
+  const todosOrdenados: Array<{ afiliado: Afiliado; depth: number }> = titulares.map(a => ({ afiliado: a, depth: 0 }));
+
   return (
     <>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-      {afiliados.map((afiliado, index) => {
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+      {todosOrdenados.map(({afiliado, depth}, index) => {
         const esLider = !!afiliado.es_lider;
-        const esFamiliar = !!afiliado.familiar && !esLider;
+        const esFamiliar = !!afiliado.familiar_de && !esLider;
         const puedeEliminar = !(esLider && totalAfiliados > 1);
-        const colorDpi = obtenerColorDpi(afiliado);
 
         return (
           <div
             key={afiliado.id}
-            className={`group relative bg-white border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex flex-col ${
+            onClick={() => toggleExpand(afiliado.id)}
+            className={`group relative bg-white border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer overflow-hidden ${
               esLider
-                ? "border-orange-300 ring-1 ring-orange-200"
+                ? "border-orange-200 ring-1 ring-orange-100"
                 : esFamiliar
-                  ? "border-purple-200"
-                  : "border-gray-200"
-            }`}
+                  ? "border-purple-100"
+                  : "border-gray-100"
+            } ${depth > 0 ? "ml-8 md:ml-12 border-l-4 border-l-purple-400" : ""} ${expandedId === afiliado.id ? "ring-2 ring-blue-500/20 border-blue-200" : ""}`}
           >
             {esLider && (
               <div className="absolute -top-2.5 left-3 z-10">
@@ -192,21 +219,9 @@ export default function Tabla({
                 </span>
               </div>
             )}
-            {esFamiliar && (
-              <div className="absolute -top-2.5 left-3 z-10">
-                <span className="flex items-center gap-1 bg-purple-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">
-                  <Heart className="w-2.5 h-2.5" /> Familiar
-                </span>
-              </div>
-            )}
 
-            {/* Tooltip Personalizado */}
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-[100] whitespace-nowrap">
-              <div className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-md shadow-xl border border-blue-400">
-                {afiliado.nombres} {afiliado.apellidos}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-blue-600"></div>
-              </div>
-            </div>
+
+
 
             <div className="p-4 flex-1 space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-100 pb-3 gap-1 md:gap-2">
@@ -222,7 +237,7 @@ export default function Tabla({
                   >
                     {index + 1}
                   </span>
-                  <h3 className="text-xs font-bold text-gray-900 uppercase leading-tight truncate group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-sm font-black text-gray-900 uppercase leading-tight">
                     {afiliado.nombres} {afiliado.apellidos}
                   </h3>
                 </div>
@@ -294,8 +309,12 @@ export default function Tabla({
               {/* LÍNEA 4: PADRÓN */}
               <div className="pt-1">
                 {afiliado.empadronado ? (
-                  <div className="bg-green-50 border border-green-200 rounded p-2 flex items-center gap-2 text-green-800">
-                    <Hash className="w-3.5 h-3.5 text-green-600 shrink-0" />
+                  <div className={`border rounded p-2 flex items-center gap-2 ${
+                    esFamiliar 
+                      ? "bg-purple-50 border-purple-200 text-purple-800" 
+                      : "bg-blue-50 border-blue-200 text-blue-800"
+                  }`}>
+                    <Hash className={`w-3.5 h-3.5 shrink-0 ${esFamiliar ? "text-purple-600" : "text-blue-600"}`} />
                     <div className="text-[10px]">
                       <span className="font-bold uppercase mr-1">Padrón:</span>
                       <span className="font-mono font-bold">
@@ -314,72 +333,70 @@ export default function Tabla({
               </div>
             </div>
 
-            {puedeVerAcciones && (
-              <div className="bg-gray-50 p-3 border-t border-gray-100 flex flex-col gap-2 mt-auto rounded-b-lg">
-                <button
-                  type="button"
-                  onClick={() => setVerDpiAfiliado(afiliado)}
-                  className={`w-full inline-flex items-center justify-center gap-2 py-2 rounded-lg text-white text-xs font-black uppercase transition ${colorDpi}`}
+            <AnimatePresence>
+              {puedeVerAcciones && expandedId === afiliado.id && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="overflow-hidden"
                 >
-                  <Eye className="w-4 h-4" />
-                  Ver DPI
-                </button>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 bg-white text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700 h-8 text-xs font-bold"
-                    onClick={() => setGestionDpiAfiliado(afiliado)}
+                  <div 
+                    className="bg-gray-50/80 p-2 border-t border-gray-100 flex flex-wrap gap-1.5"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    Subir/Editar DPI
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 bg-white text-green-600 border-gray-200 hover:bg-green-50 hover:text-green-700 h-8 text-xs font-bold"
-                    onClick={() => descargarCarnet(afiliado)}
-                  >
-                    <Download className="w-3.5 h-3.5 mr-1.5" />
-                    Carnet
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 bg-white text-blue-600 border-gray-200 hover:bg-blue-50 hover:text-blue-700 h-8 text-xs"
-                    onClick={() => onEditar(afiliado)}
-                  >
-                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={!puedeEliminar}
-                    title={
-                      !puedeEliminar
-                        ? "No se puede eliminar al líder mientras tenga integrantes"
-                        : undefined
-                    }
-                    className="flex-1 bg-white text-red-600 border-gray-200 hover:bg-red-50 hover:text-red-700 h-8 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
-                    onClick={() =>
-                      puedeEliminar && eliminar(afiliado, onDataChange)
-                    }
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                    Eliminar
-                  </Button>
-                </div>
-              </div>
-            )}
+                    {/* Ver/Cargar DPI */}
+                    <button
+                      type="button"
+                      onClick={() => setGestionDpiAfiliado(afiliado)}
+                      className={`flex-1 inline-flex items-center justify-center gap-2 px-3 h-12 rounded-lg text-white text-xs font-black uppercase transition shadow-md shrink-0 ${obtenerDpiInfo(afiliado).color}`}
+                    >
+                      <Eye className="w-4 h-4" />
+                      {obtenerDpiInfo(afiliado).label}
+                    </button>
+
+                    {/* Ver Familia Button (Conditional) */}
+                    {!esFamiliar && !isFamilyView && (
+                      <Button
+                        variant="outline"
+                        className="flex-1 bg-white text-purple-700 border-purple-200 hover:bg-purple-100 h-12 px-3 text-xs font-black uppercase shrink-0 shadow-sm"
+                        onClick={() => setTitularVerFamilia(afiliado)}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Familia ({familiaresPorTitular.get(afiliado.id)?.length || 0})
+                      </Button>
+                    )}
+
+                    {/* Editar Button */}
+                    <Button
+                      variant="outline"
+                      className="flex-1 bg-white text-blue-700 border-blue-200 hover:bg-blue-50 h-12 px-3 text-xs font-black uppercase shrink-0 shadow-sm"
+                      onClick={() => onEditar(afiliado)}
+                    >
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+
+                    {/* Eliminar Button */}
+                    <Button
+                      variant="outline"
+                      disabled={!puedeEliminar}
+                      title={!puedeEliminar ? "No se puede eliminar al líder mientras tenga integrantes" : undefined}
+                      className="flex-1 bg-white text-red-700 border-red-200 hover:bg-red-50 h-12 px-3 text-xs font-black uppercase disabled:opacity-40 shrink-0 shadow-sm"
+                      onClick={() => puedeEliminar && eliminar(afiliado, onDataChange)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Borrar
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         );
       })}
     </div>
-
-    <VerDpiModal
-      isOpen={!!verDpiAfiliado}
-      onClose={() => setVerDpiAfiliado(null)}
-      afiliado={verDpiAfiliado}
-      onDataChange={onDataChange}
-    />
 
     <GestionDpiModal
       isOpen={!!gestionDpiAfiliado}
@@ -389,6 +406,92 @@ export default function Tabla({
         onDataChange();
       }}
     />
+
+    <Transition show={!!titularVerFamilia} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={() => setTitularVerFamilia(null)}>
+        <TransitionChild
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" />
+        </TransitionChild>
+
+        <div className="fixed inset-0 z-10">
+          <div className="flex min-h-full items-center justify-center p-0">
+            <TransitionChild
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <DialogPanel className="w-screen h-screen bg-white flex flex-col overflow-hidden">
+                <div className="flex justify-between items-center p-4 md:p-6 bg-white border-b shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-purple-100 p-2 rounded-lg">
+                      <Users className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <Dialog.Title as="h3" className="text-lg md:text-xl font-bold text-gray-900 leading-tight">
+                        Familia de {titularVerFamilia?.nombres}
+                      </Dialog.Title>
+                      <p className="text-xs font-medium text-gray-500 uppercase mt-0.5">
+                        Gestión de grupo familiar
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setTitularVerFamilia(null)}
+                    className="text-blue-600 font-bold hover:underline text-sm uppercase px-4 py-2"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+                
+                <div className="p-4 md:p-6 overflow-y-auto flex-1">
+                  {titularVerFamilia && (
+                    <div className="space-y-4">
+                      <div className="flex justify-end">
+                        {onAnadirFamiliar && (
+                          <Button
+                            onClick={() => onAnadirFamiliar(titularVerFamilia.id)}
+                            className="bg-purple-600 hover:bg-purple-700 text-white gap-2 font-bold"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            Añadir Familiar
+                          </Button>
+                        )}
+                      </div>
+                      <Tabla
+                        lider={lider}
+                        afiliados={[
+                          titularVerFamilia,
+                          ...(familiaresPorTitular.get(titularVerFamilia.id) || []),
+                        ]}
+                        onEditar={onEditar}
+                        onAnadirFamiliar={onAnadirFamiliar}
+                        onDataChange={onDataChange}
+                        rolUsuarioSesion={rolUsuarioSesion}
+                        config={config}
+                        totalEnCelula={totalEnCelula}
+                        isFamilyView={true}
+                      />
+                    </div>
+                  )}
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
   </>
   );
 }

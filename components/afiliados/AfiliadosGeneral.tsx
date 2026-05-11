@@ -22,11 +22,6 @@ export default function AfiliadosGeneral({
   searchTerm,
 }: Props) {
   const [liderAbiertoId, setLiderAbiertoId] = useState<string | null>(null);
-  const [filtros, setFiltros] = useState<Map<string, "todos" | "afiliados" | "familiares">>(new Map());
-
-  const getFiltro = (id: string) => filtros.get(id) ?? "todos";
-  const setFiltro = (id: string, valor: "todos" | "afiliados" | "familiares") =>
-    setFiltros((prev) => new Map(prev).set(id, valor));
 
   const calcularEdad = (fechaNacimiento: string) => {
     if (!fechaNacimiento) return "—";
@@ -115,8 +110,6 @@ export default function AfiliadosGeneral({
             : "bg-gray-50 border-gray-200"
           : "bg-red-50 border-red-200";
 
-        const filtroActual = getFiltro(liderId);
-
         return (
           <div key={liderId} className="border rounded-lg shadow-sm">
             <div
@@ -133,42 +126,7 @@ export default function AfiliadosGeneral({
                 className={`h-5 w-5 text-gray-600 transition-transform ${isLiderAbierto ? "rotate-180" : ""}`}
               />
             </div>
-
-            {isLiderAbierto && (
-              <div
-                className="flex items-center gap-1 px-4 py-2 border-b bg-white flex-wrap"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(
-                  [
-                    { valor: "todos",      label: "Todos",      iconActivo: <Users className="w-3 h-3 text-white" />,         iconInactivo: <Users className="w-3 h-3 text-gray-500" /> },
-                    { valor: "familiares", label: "Familiares", iconActivo: <Heart className="w-3 h-3 text-white" />,         iconInactivo: <Heart className="w-3 h-3 text-purple-500" /> },
-                    { valor: "afiliados",  label: "Afiliados",  iconActivo: <User  className="w-3 h-3 text-white" />,         iconInactivo: <User  className="w-3 h-3 text-blue-500" /> },
-                  ] as const
-                ).map(({ valor, label, iconActivo, iconInactivo }) => {
-                  const activo = filtroActual === valor;
-                  return (
-                    <button
-                      key={valor}
-                      type="button"
-                      onClick={() => setFiltro(liderId, valor)}
-                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${
-                        activo
-                          ? valor === "todos"
-                            ? "bg-green-600 text-white border-green-600"
-                            : valor === "familiares"
-                            ? "bg-purple-600 text-white border-purple-600"
-                            : "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
-                      }`}
-                    >
-                      {activo ? iconActivo : iconInactivo}
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            {/* Filtros removidos por instrucción de diseño */}
 
             <motion.div
               initial={false}
@@ -178,18 +136,28 @@ export default function AfiliadosGeneral({
             >
               {(() => {
                 const liderRow = list.find((a) => !!a.es_lider) ?? list[0];
-                const familiares = list.filter((a) => !!a.familiar && a.id !== liderRow?.id);
-                const miembros = list.filter((a) => !a.familiar && a.id !== liderRow?.id);
-                const todosOrdenados: Array<{ afiliado: Afiliado; tipo: "lider" | "familiar" | "miembro" }> = [
-                  ...(liderRow ? [{ afiliado: liderRow, tipo: "lider" as const }] : []),
-                  ...familiares.map((a) => ({ afiliado: a, tipo: "familiar" as const })),
-                  ...miembros.map((a) => ({ afiliado: a, tipo: "miembro" as const })),
-                ];
-                const ordenada = filtroActual === "familiares"
-                  ? todosOrdenados.filter((r) => r.tipo === "lider" || r.tipo === "familiar")
-                  : filtroActual === "afiliados"
-                  ? todosOrdenados.filter((r) => r.tipo === "lider" || r.tipo === "miembro")
-                  : todosOrdenados;
+                const titulares = list.filter((a) => !a.familiar_de && a.id !== liderRow?.id);
+                const familiaresPorTitular = new Map<string, Afiliado[]>();
+                list.forEach(a => {
+                  if (a.familiar_de) {
+                    if (!familiaresPorTitular.has(a.familiar_de)) familiaresPorTitular.set(a.familiar_de, []);
+                    familiaresPorTitular.get(a.familiar_de)!.push(a);
+                  }
+                });
+                
+                const todosOrdenados: Array<{ afiliado: Afiliado; tipo: "lider" | "familiar" | "miembro"; depth: number }> = [];
+                if (liderRow) todosOrdenados.push({ afiliado: liderRow, tipo: "lider", depth: 0 });
+                
+                if (liderRow && familiaresPorTitular.has(liderRow.id)) {
+                  familiaresPorTitular.get(liderRow.id)!.forEach(fam => todosOrdenados.push({ afiliado: fam, tipo: "familiar", depth: 1 }));
+                }
+
+                titulares.forEach(titular => {
+                  todosOrdenados.push({ afiliado: titular, tipo: "miembro", depth: 0 });
+                  if (familiaresPorTitular.has(titular.id)) {
+                    familiaresPorTitular.get(titular.id)!.forEach(fam => todosOrdenados.push({ afiliado: fam, tipo: "familiar", depth: 1 }));
+                  }
+                });
                 return (
                   <div className="overflow-x-auto">
                     <table className="min-w-full bg-white text-xs">
@@ -204,18 +172,18 @@ export default function AfiliadosGeneral({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {ordenada.map(({ afiliado, tipo }, index) => (
+                        {todosOrdenados.map(({ afiliado, tipo, depth }, index) => (
                           <tr
                             key={afiliado.id}
                             className={`uppercase ${
                               tipo === "lider"
                                 ? "bg-orange-50 hover:bg-orange-100"
                                 : tipo === "familiar"
-                                ? "bg-purple-50 hover:bg-purple-100"
+                                ? "bg-purple-50/50 hover:bg-purple-100/80"
                                 : "hover:bg-gray-50"
                             }`}
                           >
-                            <td className="px-4 py-2 whitespace-nowrap">
+                            <td className={`px-4 py-2 whitespace-nowrap ${depth > 0 ? "pl-12" : ""}`}>
                               {tipo === "lider" ? (
                                 <span className="flex items-center gap-1 text-orange-600 font-black">
                                   <Crown className="w-3 h-3" /> {index + 1}

@@ -54,6 +54,7 @@ interface Props {
   afiliados: Afiliado[];
   isFirstMember?: boolean;
   datosLider?: LiderType | null;
+  familiarDeId?: string | null;
 }
 
 function ComboSearch({
@@ -259,6 +260,7 @@ export default function AfiliadosForm({
   afiliados = [],
   isFirstMember = false,
   datosLider = null,
+  familiarDeId = null,
 }: Props) {
   const { rol_id } = useUserData();
   const esAdmin = rol_id === 1 || rol_id === 2;
@@ -309,7 +311,6 @@ export default function AfiliadosForm({
   const sexoActual = watch("sexo");
   const religionActual = watch("religion");
   const dpiActual = watch("dpi");
-  const familiarActual = watch("familiar");
   const buscador = useBuscadorLider(lideres, setValue);
   const [buscandoDpi, setBuscandoDpi] = useState(false);
   const [padronStatus, setPadronStatus] = useState<
@@ -400,6 +401,7 @@ export default function AfiliadosForm({
     buscador.setShowLiderSuggestions,
     isFirstMember,
     datosLider,
+    familiarDeId,
   );
 
   useEffect(() => {
@@ -1052,27 +1054,6 @@ export default function AfiliadosForm({
                     </select>
                   </div>
 
-                  {!isFirstMember && (
-                    <div className="flex items-center justify-between rounded-lg border px-4 py-3 bg-gray-50">
-                      <div>
-                        <p className="text-[10px] font-bold text-purple-600 uppercase">
-                          Familiar
-                        </p>
-                        <p className="text-[10px] text-gray-400">
-                          Marcar si el afiliado es un familiar
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setValue("familiar", !familiarActual)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${familiarActual ? "bg-purple-500" : "bg-gray-300"}`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${familiarActual ? "translate-x-5" : "translate-x-0"}`}
-                        />
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
 
