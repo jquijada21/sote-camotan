@@ -4,7 +4,18 @@ import { useState, useEffect, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { Search, X } from "lucide-react";
+import {
+  Search,
+  X,
+  BarChart3,
+  Settings,
+  UserPlus,
+  Users,
+  CheckCircle2,
+  ClipboardList,
+  Shield,
+  Crown,
+} from "lucide-react";
 
 import EstadisticasTabs from "./estadisticas/EstadisticasTabs";
 import ConfiguracionSistema from "../dashboard/ConfiguracionSistema";
@@ -89,7 +100,7 @@ export default function Ver() {
       // Primero definimos los roles de administrativos
       const esCualquierAdmin = rol === "SUPER" || rol === "ADMINISTRADOR" || rol === "ADMIN";
       const arrAdmins = ["ADMINISTRADOR", "SUPER", "ADMIN"];
-      
+
       // Hacemos una SOLA llamada al backend para todos los roles permitidos
       const pTodosUsuarios = listarUsuariosAction(esCualquierAdmin ? ["LIDER", ...arrAdmins] : ["LIDER"]);
       const pLugares = obtenerLugaresAction();
@@ -98,7 +109,7 @@ export default function Ver() {
         pTodosUsuarios,
         pLugares
       ]);
-      
+
       // Manejar la estructura según si viene envuelto
       const allUsers = (
         Array.isArray(todosUsuariosData) ? todosUsuariosData : (todosUsuariosData as any)?.data || []
@@ -107,11 +118,11 @@ export default function Ver() {
       // Separamos en memoria líderes y administrativos
       const allLideres = allUsers.filter(u => u.rol === "LIDER");
       // SUPER ve todos los admins; ADMIN/ADMINISTRADOR solo ven ADMIN y ADMINISTRADOR (no SUPER)
-      const rolesVisibles = rol === "SUPER" 
-        ? arrAdmins 
+      const rolesVisibles = rol === "SUPER"
+        ? arrAdmins
         : ["ADMIN", "ADMINISTRADOR"];
       const allAdmins = allUsers.filter(u => rolesVisibles.includes(u.rol));
-      
+
       if (rol === "LIDER" && userId) {
         const myLider = allLideres.find((l) => l.id === userId);
         const otherLideres = allLideres.filter((l) => l.id !== userId);
@@ -119,7 +130,7 @@ export default function Ver() {
       } else {
         setLideres(allLideres);
       }
-      
+
       setLugares(
         (Array.isArray(lugaresData) ? lugaresData : (lugaresData as any)?.data || []) as Lugar[]
       );
@@ -202,9 +213,9 @@ export default function Ver() {
     setIsFormOpen(false);
     queryClient.invalidateQueries({ queryKey: ["afiliados-lider"] });
     queryClient.invalidateQueries({ queryKey: ["afiliados-gl"] });
-    
+
     await fetchData();
-    
+
     if (liderParaCelula) {
       const updatedLider = lideres.find((l) => l.id === liderParaCelula.id);
       if (updatedLider) {
@@ -220,8 +231,8 @@ export default function Ver() {
         <ConfiguracionSistema showMetas={false} allowEditing={false} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
-            <h1 className="text-2xl font-bold text-black md:text-3xl whitespace-nowrap">
-              Gestión de Datos 📊
+            <h1 className="text-2xl font-bold text-black md:text-3xl whitespace-nowrap flex items-center gap-2">
+              Gestión de Datos <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
             </h1>
           </div>
           <div className="relative w-full md:w-96">
@@ -240,58 +251,76 @@ export default function Ver() {
             <Button
               onClick={() => setIsEstadisticasOpen(true)}
               variant="outline"
-              className="gap-2 w-full text-xs md:text-xl"
+              className="gap-2 w-full text-xs md:text-xl font-bold"
             >
-              📊 Estadísticas Generales
+              <BarChart3 className="w-4 h-4 md:w-6 md:h-6" /> Estadísticas Generales
             </Button>
             {esAdminOSuper && (
               <Button
                 onClick={() => setIsConfigOpen(true)}
                 variant="outline"
-                className="gap-2 w-full text-xs md:text-xl"
+                className="gap-2 w-full text-xs md:text-xl font-bold"
               >
-                ⚙️ Configuraciones
+                <Settings className="w-4 h-4 md:w-6 md:h-6" /> Configuraciones
               </Button>
             )}
             {esAdminOSuper && (
               <Button
                 onClick={handleOpenCreateLiderModal}
-                className="gap-2 w-full text-xl"
+                className="gap-2 w-full text-xl font-bold"
               >
-                🦸 Nuevo Líder
+                <UserPlus className="w-6 h-6" /> Nuevo Líder
               </Button>
             )}
           </div>
         </div>
 
-        <div className="flex border-b mb-6">
+        <div className="flex border-b mb-6 overflow-x-auto no-scrollbar whitespace-nowrap">
           <button
             onClick={() => setActiveTab("Lideres")}
-            className={`px-4 py-2 text-base font-semibold ${activeTab === "Lideres" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+            className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Lideres"
+              ? "border-b-4 border-orange-500 text-orange-600 bg-orange-50/50"
+              : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+              }`}
           >
-            👥 Líderes
+            <Crown className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Lideres" ? "text-orange-500" : ""}`} />
+            Líderes
           </button>
+
           <button
             onClick={() => setActiveTab("Afiliados")}
-            className={`px-4 py-2 text-base font-semibold ${activeTab === "Afiliados" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+            className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Afiliados"
+              ? "border-b-4 border-purple-600 text-purple-700 bg-purple-50/50"
+              : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+              }`}
           >
-            ✅ Miembros
+            <Users className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Afiliados" ? "text-purple-600" : ""}`} />
+            Miembros
           </button>
+
           {(rol === "ADMINISTRADOR" || rol === "SUPER" || rol === "ADMIN") && (
             <>
               {padronHabilitado && (
                 <button
                   onClick={() => setActiveTab("Padron")}
-                  className={`px-4 py-2 text-base font-semibold ${activeTab === "Padron" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+                  className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Padron"
+                    ? "border-b-4 border-green-600 text-green-700 bg-green-50/50"
+                    : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+                    }`}
                 >
-                  📋 Padrón
+                  <ClipboardList className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Padron" ? "text-green-600" : ""}`} />
+                  Padrón
                 </button>
               )}
               <button
                 onClick={() => setActiveTab("Administrativos")}
-                className={`px-4 py-2 text-base font-semibold ${activeTab === "Administrativos" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+                className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Administrativos"
+                  ? "border-b-4 border-blue-600 text-blue-700 bg-blue-50/50"
+                  : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+                  }`}
               >
-                🛡️ Administrativos
+                <Shield className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Administrativos" ? "text-blue-600" : ""}`} />
+                Administrativos
               </button>
             </>
           )}
@@ -346,8 +375,8 @@ export default function Ver() {
             <DialogPanel className="w-screen h-screen bg-white flex flex-col">
               <div className="flex justify-between items-center px-6 py-3 border-b shrink-0 bg-white z-10">
                 <div className="flex flex-col">
-                  <h3 className="text-base md:text-xl font-bold uppercase leading-none">
-                    Estadísticas Generales 📊
+                  <h3 className="text-base md:text-xl font-bold uppercase flex items-center gap-2">
+                    Estadísticas Generales <BarChart3 className="w-5 h-5 text-blue-600" />
                   </h3>
                   <p className="text-[9px] text-gray-500 font-bold uppercase mt-1">
                     Análisis global de {afiliados.length} registros
@@ -383,7 +412,7 @@ export default function Ver() {
           <DialogPanel className="mx-auto w-full md:w-[70vw] max-w-none bg-white rounded-none sm:rounded-3xl shadow-2xl overflow-hidden h-full sm:h-[95vh] flex flex-col">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
               <h2 className="text-2xl font-black text-blue-900 flex items-center gap-2">
-                ⚙️ Configuración del Sistema
+                <Settings className="h-6 w-6" /> Configuración del Sistema
               </h2>
               <button
                 onClick={() => setIsConfigOpen(false)}
@@ -428,7 +457,7 @@ export default function Ver() {
         <Dialog
           as="div"
           className="relative z-50"
-          onClose={handleCloseSignupModal} 
+          onClose={handleCloseSignupModal}
         >
           <TransitionChild
             as={Fragment}
@@ -471,3 +500,5 @@ export default function Ver() {
     </>
   );
 }
+
+

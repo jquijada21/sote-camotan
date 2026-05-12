@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
-import { Loader2, Upload, RefreshCw, Trash2, Camera, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, RefreshCw, Trash2, Camera, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 
@@ -220,7 +220,7 @@ export default function ImageUploader({
                 <div className="flex items-center w-full bg-white border border-gray-100 rounded-lg overflow-hidden shadow-lg mt-3 h-14">
 
                   <div className="flex-[3.5] flex items-center px-5 gap-6 h-full bg-blue-50/30">
-                    <span className="text-[11px] font-black text-purple-600 uppercase tracking-widest shrink-0">Reemplazar:</span>
+                    <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest shrink-0">Reemplazar:</span>
                     <div className="flex items-center gap-3 flex-1">
                       <button
                         type="button"
@@ -228,14 +228,14 @@ export default function ImageUploader({
                         disabled={isLocked}
                         className="flex-1 inline-flex items-center justify-center gap-2 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-100/50 py-2.5 rounded-lg transition-all active:scale-95"
                       >
-                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-4 h-4" />}
                         Galería
                       </button>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); triggerCamera(); }}
                         disabled={isLocked}
-                        className="flex-1 inline-flex items-center justify-center gap-2 text-green-600 text-[10px] font-black uppercase hover:bg-green-100/50 py-2.5 rounded-lg transition-all active:scale-95"
+                        className="flex-1 inline-flex items-center justify-center gap-2 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-100/50 py-2.5 rounded-lg transition-all active:scale-95"
                       >
                         {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-4 h-4" />}
                         Cámara
@@ -280,7 +280,7 @@ export default function ImageUploader({
                   disabled={isLocked}
                   className="flex-1 inline-flex flex-col items-center justify-center gap-3 py-6 rounded-lg bg-blue-50/50 border-2 border-blue-100 text-blue-700 text-xs font-black uppercase hover:bg-blue-100 hover:border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
                 >
-                  <ImageIcon className="w-8 h-8" />
+                  <Upload className="w-8 h-8" />
                   Galería
                 </button>
                 <button
