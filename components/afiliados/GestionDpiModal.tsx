@@ -206,6 +206,7 @@ export default function GestionDpiModal({
                       <ImageUploader
                         bucketName={BUCKET}
                         currentImagePath={frontalPath}
+                        enableImageLoupe
                         onUploadSuccess={async (newPath) => {
                           await mutation.mutateAsync({
                             campo: "dpi_frontal_url",
@@ -240,6 +241,7 @@ export default function GestionDpiModal({
                       <ImageUploader
                         bucketName={BUCKET}
                         currentImagePath={reversoPath}
+                        enableImageLoupe
                         onUploadSuccess={async (newPath) => {
                           await mutation.mutateAsync({
                             campo: "dpi_reverso_url",

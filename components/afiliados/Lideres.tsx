@@ -88,11 +88,15 @@ export default function Lideres({
   const { data: config } = useQuery({
     queryKey: ["config_sistema"],
     queryFn: () => obtenerConfiguracionAction(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
   });
 
   const { data: conteoPadron = 0 } = useQuery({
     queryKey: ["conteo_padron"],
     queryFn: () => obtenerConteoPadronAction(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
   });
 
   const OBJETIVO_GENERAL = config?.objetivo_total || 0;

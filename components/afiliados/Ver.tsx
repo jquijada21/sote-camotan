@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import {
@@ -11,10 +10,10 @@ import {
   Settings,
   UserPlus,
   Users,
-  CheckCircle2,
   ClipboardList,
   Shield,
   Crown,
+  FileBarChart,
 } from "lucide-react";
 
 import EstadisticasTabs from "./estadisticas/EstadisticasTabs";
@@ -27,7 +26,6 @@ import Celula from "./Celula";
 import Padron from "./Padron";
 import { SignupForm } from "@/components/admin/sign-up/SignForm";
 import type { Afiliado, Lider } from "./esquemas";
-import useUserData from "@/hooks/sesion/useUserData";
 import {
   Dialog,
   Transition,
@@ -35,26 +33,102 @@ import {
   DialogPanel,
 } from "@headlessui/react";
 
-import { listarUsuariosAction } from "./actions/usuarios";
 import { obtenerAfiliadosAction } from "./actions/afiliados";
-import { obtenerLugaresAction } from "./actions/lugares";
 import { obtenerConfiguracionAction } from "@/components/dashboard/actions/configuracion";
+import { loadAfiliacionVerDashboardAction } from "./actions/afiliacion-ver-dashboard";
+import ReporteLideresClasificacion from "./reportes/ReporteLideresClasificacion";
 
-type Lugar = { id: number; nombre: string; sector_id: number | null; sector_nombre: string | null };
+type Lugar = {
+  id: number;
+  nombre: string;
+  sector_id: number | null;
+  sector_nombre: string | null;
+};
 type Tab = "Lideres" | "Afiliados" | "Padron" | "Administrativos";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+export const AFILIACION_VER_QK = ["afiliacion-ver-dashboard"] as const;
+
 export default function Ver() {
-  const { rol, cargando: cargandoRol, userId } = useUserData();
-  const esAdminOSuper = rol === "ADMINISTRADOR" || rol === "SUPER" || rol === "ADMIN";
-  const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [lideres, setLideres] = useState<Lider[]>([]);
-  const [administrativos, setAdministrativos] = useState<Lider[]>([]);
-  const [lugares, setLugares] = useState<Lugar[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: dashboard,
+    isPending: dashboardPending,
+    isError: dashboardIsError,
+    error: dashboardError,
+  } = useQuery({
+    queryKey: AFILIACION_VER_QK,
+    queryFn: async () => {
+      const res = await loadAfiliacionVerDashboardAction();
+      if (res === null) {
+        throw new Error("No autorizado");
+      }
+      return res;
+    },
+    staleTime: 60_000,
+    gcTime: 15 * 60_000,
+  });
+
+  const rol = dashboard?.session.rol ?? null;
+  const userId = dashboard?.session.id ?? "";
+  const esAdminOSuper =
+    rol === "ADMINISTRADOR" || rol === "SUPER" || rol === "ADMIN";
+
+  const { lideres, administrativos, lugares } = useMemo(() => {
+    if (!dashboard) {
+      return {
+        lideres: [] as Lider[],
+        administrativos: [] as Lider[],
+        lugares: [] as Lugar[],
+      };
+    }
+
+    const { session, todosUsuariosData, lugaresData } = dashboard;
+    const rolVal = session.rol;
+    if (!rolVal) {
+      return {
+        lideres: [] as Lider[],
+        administrativos: [] as Lider[],
+        lugares: [] as Lugar[],
+      };
+    }
+
+    const arrAdmins = ["ADMINISTRADOR", "SUPER", "ADMIN"];
+    const allUsers = (
+      Array.isArray(todosUsuariosData)
+        ? todosUsuariosData
+        : (todosUsuariosData as { data?: Lider[] })?.data || []
+    ) as Lider[];
+
+    const allLideres = allUsers.filter((u) => u.rol === "LIDER");
+    const rolesVisibles =
+      rolVal === "SUPER" ? arrAdmins : ["ADMIN", "ADMINISTRADOR"];
+    const allAdmins = allUsers.filter((u) => rolesVisibles.includes(u.rol));
+
+    let lideresOrdered: Lider[];
+    if (rolVal === "LIDER" && session.id) {
+      const myLider = allLideres.find((l) => l.id === session.id);
+      const otherLideres = allLideres.filter((l) => l.id !== session.id);
+      lideresOrdered = myLider ? [myLider, ...otherLideres] : allLideres;
+    } else {
+      lideresOrdered = allLideres;
+    }
+
+    const lugaresNorm = (
+      Array.isArray(lugaresData)
+        ? lugaresData
+        : (lugaresData as { data?: Lugar[] })?.data || []
+    ) as Lugar[];
+
+    return {
+      lideres: lideresOrdered,
+      administrativos: allAdmins,
+      lugares: lugaresNorm,
+    };
+  }, [dashboard]);
+
   const [activeTab, setActiveTab] = useState<Tab>("Lideres");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -62,6 +136,7 @@ export default function Ver() {
   const [isEstadisticasOpen, setIsEstadisticasOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isReportesLideresOpen, setIsReportesLideresOpen] = useState(false);
 
   const [afiliadoParaEditar, setAfiliadoParaEditar] = useState<Afiliado | null>(
     null,
@@ -71,82 +146,55 @@ export default function Ver() {
   const [liderParaNuevoAfiliado, setLiderParaNuevoAfiliado] = useState<
     string | null
   >(null);
-  const [familiarDeIdParaNuevo, setFamiliarDeIdParaNuevo] = useState<string | null>(null);
+  const [familiarDeIdParaNuevo, setFamiliarDeIdParaNuevo] = useState<
+    string | null
+  >(null);
 
   const [isFirstMemberAddition, setIsFirstMemberAddition] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // TanStack Query para afiliados globales (se activa solo si es necesario)
-  const { data: afiliados = [], isLoading: isLoadingAfiliados } = useQuery({
+  const { data: afiliados = [] } = useQuery({
     queryKey: ["afiliados-gl"],
     queryFn: () => obtenerAfiliadosAction(),
-    enabled: isEstadisticasOpen || activeTab === "Afiliados",
+    enabled:
+      isEstadisticasOpen ||
+      activeTab === "Afiliados" ||
+      isReportesLideresOpen,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
   });
 
   const { data: configSis } = useQuery({
     queryKey: ["config_sistema"],
     queryFn: () => obtenerConfiguracionAction(),
+    staleTime: 5 * 60_000,
+    refetchOnMount: false,
   });
 
   const padronHabilitado = configSis?.padron === true;
 
+  const invalidateAfiliadosRelatedQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ["afiliados-lider"] });
+    queryClient.invalidateQueries({ queryKey: ["afiliados-gl"] });
+    queryClient.invalidateQueries({ queryKey: ["conteo_padron"] });
+  };
+
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Al recargar datos, invalidamos el caché de TanStack para forzar actualización
-      queryClient.invalidateQueries({ queryKey: ["afiliados-lider"] });
-      queryClient.invalidateQueries({ queryKey: ["afiliados-gl"] });
+    await queryClient.refetchQueries({ queryKey: AFILIACION_VER_QK });
+  };
 
-      // Primero definimos los roles de administrativos
-      const esCualquierAdmin = rol === "SUPER" || rol === "ADMINISTRADOR" || rol === "ADMIN";
-      const arrAdmins = ["ADMINISTRADOR", "SUPER", "ADMIN"];
-
-      // Hacemos una SOLA llamada al backend para todos los roles permitidos
-      const pTodosUsuarios = listarUsuariosAction(esCualquierAdmin ? ["LIDER", ...arrAdmins] : ["LIDER"]);
-      const pLugares = obtenerLugaresAction();
-
-      const [todosUsuariosData, lugaresData] = await Promise.all([
-        pTodosUsuarios,
-        pLugares
-      ]);
-
-      // Manejar la estructura según si viene envuelto
-      const allUsers = (
-        Array.isArray(todosUsuariosData) ? todosUsuariosData : (todosUsuariosData as any)?.data || []
-      ) as Lider[];
-
-      // Separamos en memoria líderes y administrativos
-      const allLideres = allUsers.filter(u => u.rol === "LIDER");
-      // SUPER ve todos los admins; ADMIN/ADMINISTRADOR solo ven ADMIN y ADMINISTRADOR (no SUPER)
-      const rolesVisibles = rol === "SUPER"
-        ? arrAdmins
-        : ["ADMIN", "ADMINISTRADOR"];
-      const allAdmins = allUsers.filter(u => rolesVisibles.includes(u.rol));
-
-      if (rol === "LIDER" && userId) {
-        const myLider = allLideres.find((l) => l.id === userId);
-        const otherLideres = allLideres.filter((l) => l.id !== userId);
-        setLideres(myLider ? [myLider, ...otherLideres] : allLideres);
-      } else {
-        setLideres(allLideres);
-      }
-
-      setLugares(
-        (Array.isArray(lugaresData) ? lugaresData : (lugaresData as any)?.data || []) as Lugar[]
-      );
-
-      setAdministrativos(allAdmins);
-    } catch (e) {
-      console.error(e);
-      toast.error("Error al cargar los datos.");
-    } finally {
-      setLoading(false);
-    }
+  const refreshAfterDeletion = () => {
+    invalidateAfiliadosRelatedQueries();
+    void fetchData();
   };
 
   useEffect(() => {
-    if (!cargandoRol && rol) fetchData();
-  }, [rol, cargandoRol]);
+    if (dashboardIsError) {
+      toast.error("No autorizado o error al cargar.");
+      console.error(dashboardError);
+    }
+  }, [dashboardIsError, dashboardError]);
 
   const handleOpenCreateLiderModal = () => {
     setLiderAEditar(null);
@@ -163,7 +211,7 @@ export default function Ver() {
     setLiderAEditar(null);
     queryClient.invalidateQueries({ queryKey: ["lideres"] });
     queryClient.invalidateQueries({ queryKey: ["administrativos"] });
-    fetchData();
+    void fetchData();
   };
 
   const handleCloseSignupModal = () => {
@@ -232,7 +280,8 @@ export default function Ver() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <h1 className="text-2xl font-bold text-black md:text-3xl whitespace-nowrap flex items-center gap-2">
-              Gestión de Datos <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
+              Gestión de Datos{" "}
+              <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
             </h1>
           </div>
           <div className="relative w-full md:w-96">
@@ -253,7 +302,8 @@ export default function Ver() {
               variant="outline"
               className="gap-2 w-full text-xs md:text-xl font-bold"
             >
-              <BarChart3 className="w-4 h-4 md:w-6 md:h-6" /> Estadísticas Generales
+              <BarChart3 className="w-4 h-4 md:w-6 md:h-6" /> Estadísticas
+              Generales
             </Button>
             {esAdminOSuper && (
               <Button
@@ -278,23 +328,29 @@ export default function Ver() {
         <div className="flex border-b mb-6 overflow-x-auto no-scrollbar whitespace-nowrap">
           <button
             onClick={() => setActiveTab("Lideres")}
-            className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Lideres"
-              ? "border-b-4 border-orange-500 text-orange-600 bg-orange-50/50"
-              : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
-              }`}
+            className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${
+              activeTab === "Lideres"
+                ? "border-b-4 border-orange-500 text-orange-600 bg-orange-50/50"
+                : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+            }`}
           >
-            <Crown className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Lideres" ? "text-orange-500" : ""}`} />
+            <Crown
+              className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Lideres" ? "text-orange-500" : ""}`}
+            />
             Líderes
           </button>
 
           <button
             onClick={() => setActiveTab("Afiliados")}
-            className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Afiliados"
-              ? "border-b-4 border-purple-600 text-purple-700 bg-purple-50/50"
-              : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
-              }`}
+            className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${
+              activeTab === "Afiliados"
+                ? "border-b-4 border-purple-600 text-purple-700 bg-purple-50/50"
+                : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+            }`}
           >
-            <Users className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Afiliados" ? "text-purple-600" : ""}`} />
+            <Users
+              className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Afiliados" ? "text-purple-600" : ""}`}
+            />
             Miembros
           </button>
 
@@ -303,23 +359,29 @@ export default function Ver() {
               {padronHabilitado && (
                 <button
                   onClick={() => setActiveTab("Padron")}
-                  className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Padron"
-                    ? "border-b-4 border-green-600 text-green-700 bg-green-50/50"
-                    : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
-                    }`}
+                  className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${
+                    activeTab === "Padron"
+                      ? "border-b-4 border-green-600 text-green-700 bg-green-50/50"
+                      : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+                  }`}
                 >
-                  <ClipboardList className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Padron" ? "text-green-600" : ""}`} />
+                  <ClipboardList
+                    className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Padron" ? "text-green-600" : ""}`}
+                  />
                   Padrón
                 </button>
               )}
               <button
                 onClick={() => setActiveTab("Administrativos")}
-                className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${activeTab === "Administrativos"
-                  ? "border-b-4 border-blue-600 text-blue-700 bg-blue-50/50"
-                  : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
-                  }`}
+                className={`px-4 py-3 text-sm md:text-base font-black uppercase flex items-center gap-2 transition-all ${
+                  activeTab === "Administrativos"
+                    ? "border-b-4 border-blue-600 text-blue-700 bg-blue-50/50"
+                    : "text-gray-400 hover:text-gray-600 border-b-4 border-transparent"
+                }`}
               >
-                <Shield className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Administrativos" ? "text-blue-600" : ""}`} />
+                <Shield
+                  className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === "Administrativos" ? "text-blue-600" : ""}`}
+                />
                 Administrativos
               </button>
             </>
@@ -331,11 +393,11 @@ export default function Ver() {
             lideres={lideres}
             onVerCelula={handleOpenCelulaModal}
             onEditar={handleOpenEditLiderModal}
-            rolUsuarioSesion={rol}
-            onDataChange={fetchData}
+            rolUsuarioSesion={rol ?? ""}
+            onDataChange={refreshAfterDeletion}
             searchTerm={searchTerm}
             idUsuarioSesion={userId}
-            isLoading={loading}
+            isLoading={dashboardPending}
           />
         )}
         {activeTab === "Afiliados" && (
@@ -343,24 +405,37 @@ export default function Ver() {
             afiliados={afiliados}
             lideres={lideres}
             onEditar={handleOpenEditModal}
-            onDataChange={fetchData}
+            onDataChange={refreshAfterDeletion}
             searchTerm={searchTerm}
           />
         )}
         {activeTab === "Padron" && <Padron />}
         {activeTab === "Administrativos" && (
-          <Lideres
-            lideres={administrativos}
-            onVerCelula={handleOpenCelulaModal}
-            onEditar={handleOpenEditLiderModal}
-            rolUsuarioSesion={rol}
-            onDataChange={fetchData}
-            searchTerm={searchTerm}
-            idUsuarioSesion={userId}
-            isLoading={loading}
-            hideMeta
-            showRole={true}
-          />
+          <>
+            <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2 font-bold text-blue-900 border-blue-200 bg-blue-50/50 hover:bg-blue-100 text-sm md:text-base"
+                onClick={() => setIsReportesLideresOpen(true)}
+              >
+                <FileBarChart className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
+                Reportes
+              </Button>
+            </div>
+            <Lideres
+              lideres={administrativos}
+              onVerCelula={handleOpenCelulaModal}
+              onEditar={handleOpenEditLiderModal}
+              rolUsuarioSesion={rol ?? ""}
+              onDataChange={refreshAfterDeletion}
+              searchTerm={searchTerm}
+              idUsuarioSesion={userId}
+              isLoading={dashboardPending}
+              hideMeta
+              showRole={true}
+            />
+          </>
         )}
       </div>
 
@@ -376,7 +451,8 @@ export default function Ver() {
               <div className="flex justify-between items-center px-6 py-3 border-b shrink-0 bg-white z-10">
                 <div className="flex flex-col">
                   <h3 className="text-base md:text-xl font-bold uppercase flex items-center gap-2">
-                    Estadísticas Generales <BarChart3 className="w-5 h-5 text-blue-600" />
+                    Estadísticas Generales{" "}
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
                   </h3>
                   <p className="text-[9px] text-gray-500 font-bold uppercase mt-1">
                     Análisis global de {afiliados.length} registros
@@ -407,7 +483,10 @@ export default function Ver() {
         onClose={() => setIsConfigOpen(false)}
         className="relative z-50 font-sans"
       >
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+          aria-hidden="true"
+        />
         <div className="fixed inset-0 flex items-center justify-center p-0 sm:p-4">
           <DialogPanel className="mx-auto w-full md:w-[70vw] max-w-none bg-white rounded-none sm:rounded-3xl shadow-2xl overflow-hidden h-full sm:h-[95vh] flex flex-col">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
@@ -424,7 +503,6 @@ export default function Ver() {
             <div className="p-4 md:p-6 flex-1 overflow-y-auto bg-gray-50/30 flex flex-col">
               <ConfiguracionSistema onClose={() => setIsConfigOpen(false)} />
             </div>
-
           </DialogPanel>
         </div>
       </Dialog>
@@ -435,7 +513,7 @@ export default function Ver() {
         lider={liderParaCelula}
         onEditar={handleOpenEditModal}
         onAnadirAfiliado={handleOpenAnadirAfiliadoModal}
-        onDataChange={fetchData}
+        onDataChange={refreshAfterDeletion}
         rolUsuarioSesion={rol ?? ""}
       />
 
@@ -451,6 +529,14 @@ export default function Ver() {
         isFirstMember={isFirstMemberAddition}
         familiarDeId={familiarDeIdParaNuevo}
         datosLider={lideres.find((l) => l.id === liderParaNuevoAfiliado)}
+      />
+
+      <ReporteLideresClasificacion
+        open={isReportesLideresOpen}
+        onClose={() => setIsReportesLideresOpen(false)}
+        lideres={lideres}
+        afiliados={afiliados}
+        mostrarOpcionSimular={String(rol ?? "").toUpperCase() === "SUPER"}
       />
 
       <Transition show={isSignupModalOpen} as={Fragment}>
@@ -500,5 +586,3 @@ export default function Ver() {
     </>
   );
 }
-
-
