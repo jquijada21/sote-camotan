@@ -174,6 +174,7 @@ interface Props {
   disabled?: boolean;
   signedUrlExpiresIn?: number;
   enableImageLoupe?: boolean;
+  label?: string;
 }
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -191,6 +192,7 @@ export default function ImageUploader({
   disabled = false,
   signedUrlExpiresIn = 60 * 60,
   enableImageLoupe = false,
+  label,
 }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -323,6 +325,29 @@ export default function ImageUploader({
 
   return (
     <div className="w-full">
+      {label && (
+        <header className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-black uppercase text-gray-700">
+            {label}
+          </h3>
+          {currentImagePath ? (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              disabled={isLocked}
+              className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 gap-1.5 text-red-600 hover:bg-red-100 hover:text-red-900 text-xs font-black uppercase transition-colors disabled:opacity-40"
+            >
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              Eliminar
+            </button>
+          ) : (
+            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+              Pendiente
+            </span>
+          )}
+        </header>
+      )}
+
       <input
         ref={inputRef}
         type="file"
@@ -341,10 +366,7 @@ export default function ImageUploader({
 
       {currentImagePath ? (
         <div className="flex flex-col">
-          <div
-            onClick={() => setIsExpanded(!isExpanded)}
-            className={`group relative flex min-h-[160px] max-h-[260px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 transition-all duration-500 hover:border-blue-300 ${isExpanded ? "border-blue-400 ring-4 ring-blue-50" : ""}`}
-          >
+          <div className="group relative flex min-h-[160px] max-h-[260px] w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
             {previewLoading ? (
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             ) : previewUrl ? (
@@ -375,60 +397,6 @@ export default function ImageUploader({
             )}
           </div>
 
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center w-full bg-white border border-gray-100 rounded-lg overflow-hidden shadow-lg mt-3 h-14">
-
-                  <div className="flex-[3.5] flex items-center px-5 gap-6 h-full bg-blue-50/30">
-                    <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest shrink-0">Reemplazar:</span>
-                    <div className="flex items-center gap-3 flex-1">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); triggerSelect(); }}
-                        disabled={isLocked}
-                        className="flex-1 inline-flex items-center justify-center gap-2 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-100/50 py-2.5 rounded-lg transition-all active:scale-95"
-                      >
-                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-4 h-4" />}
-                        Galería
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); triggerCamera(); }}
-                        disabled={isLocked}
-                        className="flex-1 inline-flex items-center justify-center gap-2 text-blue-600 text-[10px] font-black uppercase hover:bg-blue-100/50 py-2.5 rounded-lg transition-all active:scale-95"
-                      >
-                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-4 h-4" />}
-                        Cámara
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Separador sutil */}
-                  <div className="w-[1px] h-8 bg-gray-200 shrink-0" />
-
-                  {/* Sección Eliminar (1/4) */}
-                  <div className="flex-1 flex items-center justify-center h-full">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                      disabled={isLocked}
-                      className="w-full h-full inline-flex items-center justify-center gap-2 text-red-600 text-[10px] font-black uppercase hover:bg-red-50 transition-all active:scale-95"
-                    >
-                      {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                      Borrar
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       ) : (
         <div className="w-full border-2 border-dashed border-gray-300 rounded-lg py-8 px-4 flex flex-col items-center justify-center gap-4">
@@ -460,7 +428,6 @@ export default function ImageUploader({
                   Cámara
                 </button>
               </div>
-              <p className="text-[10px] text-gray-400 uppercase">JPG · PNG · WEBP</p>
             </>
           )}
         </div>

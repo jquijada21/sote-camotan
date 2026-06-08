@@ -153,22 +153,16 @@ export default function GestionDpiModal({
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <DialogPanel className="w-screen h-screen sm:w-full sm:max-w-lg bg-white sm:rounded-lg shadow-2xl overflow-hidden flex flex-col sm:max-h-[90vh]">
+            <DialogPanel className="w-full h-fit sm:max-w-lg bg-white sm:rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="flex items-center justify-between px-3 md:px-5 py-3 md:py-4 border-b bg-gray-50">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="bg-green-100 text-green-700 p-2 rounded-lg shrink-0">
-                    <IdCard className="w-5 h-5" />
-                  </div>
+                <div className="flex items-center min-w-0">
                   <div className="min-w-0">
-                    <h2 className="text-base font-black text-gray-900">
-                      Gestionar DPI
-                    </h2>
                     {afiliado && (
                       <div className="flex flex-col">
-                        <p className="text-[11px] text-gray-500 font-bold uppercase truncate">
+                        <h2 className="text-sm md:text-base font-black text-gray-900 uppercase truncate">
                           {afiliado.nombres} {afiliado.apellidos}
-                        </p>
-                        <p className="text-[10px] text-gray-400 font-mono font-bold tracking-wider mt-0.5">
+                        </h2>
+                        <p className="text-[11px] md:text-xs text-gray-500 font-mono font-bold tracking-wider mt-0.5">
                           DPI: {afiliado.dpi}
                         </p>
                       </div>
@@ -179,31 +173,18 @@ export default function GestionDpiModal({
                   type="button"
                   onClick={() => !isMutating && onClose()}
                   disabled={isMutating}
-                  className="text-blue-600 font-bold hover:underline text-sm uppercase px-4 py-2 shrink-0 disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-xs font-black uppercase text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors shrink-0 disabled:opacity-50"
                 >
                   Cerrar
                 </button>
               </div>
 
-              <div className="relative p-4 md:p-5 overflow-y-auto flex-1">
+              <div className="relative p-4 md:p-5 overflow-y-auto">
                 {afiliado && (
                   <div className="grid grid-cols-1 gap-6 max-w-xl mx-auto w-full">
                     <section className="flex flex-col gap-2">
-                      <header className="flex items-center justify-between">
-                        <h3 className="text-xs font-black uppercase text-gray-700">
-                          Frontal
-                        </h3>
-                        <span
-                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                            frontalPath
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-500"
-                          }`}
-                        >
-                          {frontalPath ? "Cargado" : "Pendiente"}
-                        </span>
-                      </header>
                       <ImageUploader
+                        label="Frontal"
                         bucketName={BUCKET}
                         currentImagePath={frontalPath}
                         enableImageLoupe
@@ -224,21 +205,8 @@ export default function GestionDpiModal({
                     </section>
 
                     <section className="flex flex-col gap-2">
-                      <header className="flex items-center justify-between">
-                        <h3 className="text-xs font-black uppercase text-gray-700">
-                          Reverso
-                        </h3>
-                        <span
-                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                            reversoPath
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-500"
-                          }`}
-                        >
-                          {reversoPath ? "Cargado" : "Pendiente"}
-                        </span>
-                      </header>
                       <ImageUploader
+                        label="Reverso"
                         bucketName={BUCKET}
                         currentImagePath={reversoPath}
                         enableImageLoupe
@@ -270,26 +238,26 @@ export default function GestionDpiModal({
                 )}
               </div>
 
-              <div className="flex flex-row items-center gap-2 px-3 md:px-5 py-4 md:py-5 border-t bg-gray-50 shrink-0">
+              <div className="flex flex-row items-center gap-2 px-3 md:px-5 py-4 border-t bg-gray-50 shrink-0">
                 <button
                   type="button"
                   onClick={handleDownloadPdf}
                   disabled={!tieneAlgunDpi || isMutating}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 md:px-6 h-11 rounded-lg border-2 border-red-200 bg-white text-red-600 text-[10px] md:text-xs font-black uppercase hover:bg-red-50 hover:border-red-300 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-lg bg-transparent hover:bg-red-100 text-red-600 text-xs sm:text-sm font-black uppercase transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
                   title={!tieneAlgunDpi ? "Sube al menos una imagen del DPI" : "Descargar PDF"}
                 >
-                  <Download className="w-3.5 h-3.5 md:w-4 h-4" />
-                  PDF
+                  <Download className="w-5 h-5" />
+                  Descargar PDF
                 </button>
                 <button
                   type="button"
                   onClick={handleDownloadImg}
                   disabled={!tieneAlgunDpi || isMutating}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-2 md:px-6 h-11 rounded-lg border-2 border-blue-200 bg-white text-blue-600 text-[10px] md:text-xs font-black uppercase hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
-                  title={!tieneAlgunDpi ? "Sube al menos una imagen del DPI" : "Descargar IMG"}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-lg bg-transparent hover:bg-blue-100 text-blue-600 text-xs sm:text-sm font-black uppercase transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                  title={!tieneAlgunDpi ? "Sube al menos una imagen del DPI" : "Descargar Imagen"}
                 >
-                  <Download className="w-3.5 h-3.5 md:w-4 h-4" />
-                  IMG
+                  <Download className="w-5 h-5" />
+                  Descargar Imagen
                 </button>
               </div>
             </DialogPanel>

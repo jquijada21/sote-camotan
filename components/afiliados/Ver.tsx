@@ -155,7 +155,7 @@ export default function Ver() {
   const [isFirstMemberAddition, setIsFirstMemberAddition] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: afiliados = [] } = useQuery({
+  const { data: afiliados = [], isPending: isLoadingAfiliados } = useQuery({
     queryKey: ["afiliados-gl"],
     queryFn: () => obtenerAfiliadosAction(),
     enabled:
@@ -409,6 +409,9 @@ export default function Ver() {
             onEditar={handleOpenEditModal}
             onDataChange={refreshAfterDeletion}
             searchTerm={searchTerm}
+            isLoading={isLoadingAfiliados}
+            idUsuarioSesion={userId}
+            rolUsuarioSesion={rol ?? ""}
           />
         )}
         {activeTab === "Padron" && <Padron />}

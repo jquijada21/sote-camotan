@@ -146,9 +146,9 @@ export default function Celula({
 
                 <button
                   onClick={onClose}
-                  className="text-blue-600 font-bold hover:underline text-sm uppercase px-4 py-2 shrink-0"
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-xs font-black uppercase text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors shrink-0"
                 >
-                  Cerrar
+                  CERRAR
                 </button>
               </div>
 

@@ -11,6 +11,7 @@ import {
   Hash,
   XCircle,
   MessageCircle,
+  Phone,
   Crown,
   Heart,
   Eye,
@@ -127,8 +128,8 @@ export default function Tabla({
   const obtenerDpiInfo = (afiliado: Afiliado) => {
     const hasDpi = !!afiliado.dpi_frontal_url || !!afiliado.dpi_reverso_url;
     return {
-      color: hasDpi ? "bg-green-600 hover:bg-green-700" : "bg-purple-600 hover:bg-purple-700",
-      label: hasDpi ? "Ver DPI" : "Cargar DPI"
+      color: hasDpi ? "text-green-600 hover:bg-green-100 hover:text-green-900" : "text-blue-600 hover:bg-blue-100 hover:text-blue-900",
+      label: hasDpi ? "Ver" : "Cargar"
     };
   };
 
@@ -203,196 +204,233 @@ export default function Tabla({
         return (
           <div
             key={afiliado.id}
-            onClick={() => toggleExpand(afiliado.id)}
-            className={`group relative bg-white border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer overflow-hidden ${
+            className={`group relative border rounded-2xl flex flex-col overflow-visible ${
               esLider
-                ? "border-orange-200 ring-1 ring-orange-100"
+                ? "border-orange-300 bg-gradient-to-br from-white to-orange-50/40 ring-1 ring-orange-200/50"
                 : esFamiliar
-                  ? "border-purple-100"
-                  : "border-gray-100"
-            } ${depth > 0 ? "ml-8 md:ml-12 border-l-4 border-l-purple-400" : ""} ${expandedId === afiliado.id ? "ring-2 ring-blue-500/20 border-blue-200" : ""}`}
+                  ? "border-purple-200 bg-gradient-to-br from-white to-purple-50/40"
+                  : "border-slate-200 bg-gradient-to-br from-white to-slate-50/40 hover:border-blue-300"
+            } ${depth > 0 ? "ml-8 md:ml-12 border-l-4 border-l-purple-500 rounded-l-none" : ""}`}
           >
+            {/* Lider Badge */}
             {esLider && (
-              <div className="absolute -top-2.5 left-3 z-10">
-                <span className="flex items-center gap-1 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">
-                  <Crown className="w-2.5 h-2.5" /> Líder
+              <div className="absolute -top-3 left-4 z-10">
+                <span className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase shadow-md border border-orange-400">
+                  <Crown className="w-3 h-3" /> Líder
                 </span>
               </div>
             )}
 
-
-
-
-            <div className="p-4 flex-1 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-100 pb-3 gap-1 md:gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className={`flex items-center justify-center font-bold text-xs h-6 w-6 rounded-md shrink-0 ${
+            <div className={`p-3 flex-1 space-y-3 ${esLider ? "pt-5" : ""}`}>
+              
+              {/* 1. Encabezado (Nombre, Edad, Género) */}
+              <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 min-h-[56px] shadow-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className={`flex items-center justify-center font-black text-xs h-8 w-8 rounded-full shrink-0 shadow-sm border ${
                       esLider
-                        ? "bg-orange-100 text-orange-700"
+                        ? "bg-gradient-to-br from-orange-100 to-orange-200 text-orange-700 border-orange-300"
                         : esFamiliar
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-blue-100 text-blue-700"
+                          ? "bg-gradient-to-br from-purple-100 to-purple-200 text-purple-700 border-purple-300"
+                          : "bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 border-blue-300"
                     }`}
                   >
                     {index + 1}
-                  </span>
-                  <h3 className="text-sm font-black text-gray-900 uppercase leading-tight">
-                    {afiliado.nombres} {afiliado.apellidos}
+                  </div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase leading-tight tracking-tight truncate">
+                    {afiliado.nombres} <span className="text-slate-600 font-bold">{afiliado.apellidos}</span>
                   </h3>
                 </div>
-                <div className="text-xs italic text-slate-400 shrink-0 md:text-right">
-                  Afiliado el:{" "}
-                  <span className="font-bold">
-                    {formatearFecha(afiliado.created_at)}
-                  </span>
+
+                {/* Right Side: Age & Gender */}
+                <div className="flex items-center gap-2 shrink-0 border-l border-slate-200 pl-3 ml-2">
+                  <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg text-xs">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="font-bold text-slate-700 whitespace-nowrap">
+                      {calcularEdad(afiliado.nacimiento)}
+                    </span>
+                  </div>
+                  <div className="shrink-0">
+                    {afiliado.sexo === "M" ? (
+                      <span className="flex items-center justify-center bg-blue-100 border border-blue-200 text-blue-800 font-bold text-xs h-7 w-7 rounded-md shadow-sm">
+                        M
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center bg-pink-100 border border-pink-200 text-pink-800 font-bold text-xs h-7 w-7 rounded-md shadow-sm">
+                        F
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-gray-600 gap-2">
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  <Hash className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                  <span className="font-bold text-gray-500 shrink-0">DPI:</span>
-                  <span className="font-mono font-medium truncate">
-                    {afiliado.dpi || "—"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded">
-                  <Calendar className="w-3 h-3 text-gray-400" />
-                  <span className="font-bold text-[10px]">
-                    {calcularEdad(afiliado.nacimiento)}
-                  </span>
-                </div>
-
-                <div className="shrink-0">
-                  {afiliado.sexo === "M" ? (
-                    <span className="flex items-center justify-center bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px] h-6 w-6 rounded-md">
-                      M
-                    </span>
+              {/* 2. DPI & Padron */}
+              <div className={`flex items-center gap-3 border rounded-xl px-3 py-2 min-h-[56px] shadow-sm w-full ${
+                !afiliado.empadronado
+                  ? "bg-red-50/50 border-red-200 text-red-800"
+                  : esFamiliar 
+                    ? "bg-purple-50/50 border-purple-200 text-purple-900" 
+                    : "bg-blue-50/50 border-blue-200 text-blue-900"
+              }`}>
+                {!afiliado.empadronado ? (
+                  <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+                ) : (
+                  <Hash className={`w-5 h-5 shrink-0 ${esFamiliar ? "text-purple-700" : "text-blue-700"}`} />
+                )}
+                
+                <div className="flex flex-col justify-center min-w-0 w-full">
+                  {afiliado.empadronado ? (
+                    afiliado.dpi === afiliado.no_padron && afiliado.dpi ? (
+                      <div className="flex items-center gap-2 leading-none truncate py-0.5">
+                        <span className="font-bold uppercase text-slate-500 text-sm">DPI y Padrón:</span>
+                        <span className="font-mono font-black tracking-wider text-slate-700">{afiliado.dpi}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 leading-none py-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-500 uppercase text-sm">DPI:</span>
+                          <span className="font-mono font-black tracking-wider text-slate-700">{afiliado.dpi || "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 border-l border-slate-300/50 pl-3">
+                          <span className="font-bold text-slate-500 uppercase text-sm">Padrón:</span>
+                          <span className="font-mono font-black tracking-wider text-slate-700">{afiliado.no_padron || "—"}</span>
+                        </div>
+                      </div>
+                    )
                   ) : (
-                    <span className="flex items-center justify-center bg-pink-50 text-pink-700 border border-pink-200 font-bold text-[10px] h-6 w-6 rounded-md">
-                      F
-                    </span>
+                    <div className="flex items-center justify-between w-full leading-none py-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-red-500/70 uppercase text-sm">DPI:</span>
+                        <span className="font-mono font-black tracking-wider">{afiliado.dpi || "—"}</span>
+                      </div>
+                      <span className="font-black uppercase tracking-wide text-red-700 border-l border-red-200 pl-3 text-sm">
+                        NO EMPADRONADO
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* LÍNEA 3: WHATSAPP + UBICACIÓN */}
-              <div className="flex items-center gap-3 text-xs text-gray-600">
-                <a
-                  href={generarLinkWhatsapp(afiliado.telefono || "")}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 shrink-0 text-green-600 hover:text-green-700 hover:underline transition-colors"
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span className="font-bold font-mono">
-                    {afiliado.telefono || "—"}
-                  </span>
-                </a>
+              {/* 3. Teléfono y WhatsApp */}
+              <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-0 py-0 min-h-[56px] shadow-sm overflow-hidden">
+                <span className="font-black font-mono text-base text-slate-700 tracking-wider">
+                  {afiliado.telefono || "Sin teléfono"}
+                </span>
+                
+                {afiliado.telefono && (
+                  <div className="flex items-stretch h-14 shrink-0">
+                    <a
+                      href={`tel:+502${afiliado.telefono.replace(/\D/g, "")}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center justify-center w-14 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                      title="Llamar"
+                    >
+                      <Phone className="w-5 h-5 fill-current" />
+                    </a>
+                    <a
+                      href={generarLinkWhatsapp(afiliado.telefono)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center justify-center w-14 bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                      title="WhatsApp"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                    </a>
+                  </div>
+                )}
+              </div>
 
-                <div className="h-4 w-px bg-gray-200 shrink-0"></div>
-
-                {/* Ubicación: Ahora solo depende de afiliado.lugar_nombre */}
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                  <span
-                    className="truncate"
-                    title={afiliado.lugar_nombre || "Ubicación no definida"}
-                  >
-                    {afiliado.lugar_nombre || "—"}
+              {/* 4. Ubicación y Registro Date */}
+              <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 min-h-[56px] shadow-sm gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <MapPin className="w-5 h-5 text-slate-500 shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span
+                      className="truncate font-bold text-sm text-slate-700 leading-tight"
+                      title={afiliado.lugar_nombre || "Ubicación no definida"}
+                    >
+                      {afiliado.lugar_nombre || "Ubicación no definida"}
+                    </span>
+                    <span 
+                      className="truncate text-xs font-medium text-slate-500 leading-tight mt-0.5"
+                      title={afiliado.sector_nombre || "Sector no definido"}
+                    >
+                      Sector: {afiliado.sector_nombre || "No asignado"}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col items-end shrink-0 border-l border-slate-200 pl-3 ml-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 leading-tight">Registro</span>
+                  <span className="text-xs font-black text-slate-600 leading-tight mt-0.5">
+                    {new Date(afiliado.created_at).toLocaleDateString("es-GT")}
                   </span>
                 </div>
               </div>
 
-              {/* LÍNEA 4: PADRÓN */}
-              <div className="pt-1">
-                {afiliado.empadronado ? (
-                  <div className={`border rounded p-2 flex items-center gap-2 ${
-                    esFamiliar 
-                      ? "bg-purple-50 border-purple-200 text-purple-800" 
-                      : "bg-blue-50 border-blue-200 text-blue-800"
-                  }`}>
-                    <Hash className={`w-3.5 h-3.5 shrink-0 ${esFamiliar ? "text-purple-600" : "text-blue-600"}`} />
-                    <div className="text-[10px]">
-                      <span className="font-bold uppercase mr-1">Padrón:</span>
-                      <span className="font-mono font-bold">
-                        {afiliado.no_padron || "—"}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-red-50 border border-red-200 rounded p-2 flex items-center gap-2 text-red-700">
-                    <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                    <span className="text-[10px] font-bold uppercase">
-                      NO EMPADRONADO
-                    </span>
-                  </div>
-                )}
-              </div>
             </div>
 
-            <AnimatePresence>
-              {puedeVerAcciones && expandedId === afiliado.id && (
-                <motion.div 
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <div 
-                    className="bg-gray-50/80 p-2 border-t border-gray-100 flex flex-wrap gap-1.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* Ver/Cargar DPI */}
+            {/* Acciones */}
+            {puedeVerAcciones && (
+              <div 
+                className="bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-b-2xl overflow-hidden sm:px-4 sm:py-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Primera Línea (Móvil) / Grupo Izquierdo (Desktop) */}
+                <div className="flex items-center justify-center gap-4 sm:gap-2 px-2 py-2.5 sm:p-0 w-full sm:w-auto">
+                  {/* Ver Familia Button */}
+                  {!esFamiliar && !isFamilyView && (
                     <button
                       type="button"
-                      onClick={() => setGestionDpiAfiliado(afiliado)}
-                      className={`flex-1 inline-flex items-center justify-center gap-2 px-3 h-12 rounded-lg text-white text-xs font-black uppercase transition shadow-md shrink-0 ${obtenerDpiInfo(afiliado).color}`}
+                      className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 gap-1.5 text-purple-600 hover:bg-purple-100 hover:text-purple-900 text-xs font-black uppercase transition-colors"
+                      onClick={() => setTitularVerFamilia(afiliado)}
                     >
-                      <Eye className="w-4 h-4" />
-                      {obtenerDpiInfo(afiliado).label}
+                      <Users className="w-4 h-4" />
+                      Familia ({familiaresPorTitular.get(afiliado.id)?.length || 0})
                     </button>
+                  )}
 
-                    {/* Ver Familia Button (Conditional) */}
-                    {!esFamiliar && !isFamilyView && (
-                      <Button
-                        variant="outline"
-                        className="flex-1 bg-white text-purple-700 border-purple-200 hover:bg-purple-100 h-12 px-3 text-xs font-black uppercase shrink-0 shadow-sm"
-                        onClick={() => setTitularVerFamilia(afiliado)}
-                      >
-                        <Users className="w-4 h-4 mr-2" />
-                        Familia ({familiaresPorTitular.get(afiliado.id)?.length || 0})
-                      </Button>
-                    )}
+                  {/* Ver/Cargar DPI */}
+                  <button
+                    type="button"
+                    onClick={() => setGestionDpiAfiliado(afiliado)}
+                    className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 gap-1.5 text-xs font-black uppercase transition-colors ${obtenerDpiInfo(afiliado).color}`}
+                  >
+                    <Eye className="w-4 h-4" />
+                    {obtenerDpiInfo(afiliado).label}
+                  </button>
+                </div>
 
-                    {/* Editar Button */}
-                    <Button
-                      variant="outline"
-                      className="flex-1 bg-white text-blue-700 border-blue-200 hover:bg-blue-50 h-12 px-3 text-xs font-black uppercase shrink-0 shadow-sm"
-                      onClick={() => onEditar(afiliado)}
-                    >
-                      <Pencil className="w-4 h-4 mr-2" />
-                      Editar
-                    </Button>
+                {/* División (Solo Móvil) */}
+                <div className="w-full h-px bg-slate-200 sm:hidden"></div>
 
-                    {/* Eliminar Button */}
-                    <Button
-                      variant="outline"
-                      disabled={!puedeEliminar}
-                      title={!puedeEliminar ? "No se puede eliminar al líder mientras tenga integrantes" : undefined}
-                      className="flex-1 bg-white text-red-700 border-red-200 hover:bg-red-50 h-12 px-3 text-xs font-black uppercase disabled:opacity-40 shrink-0 shadow-sm"
-                      onClick={() => puedeEliminar && eliminar(afiliado, onDataChange)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Borrar
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                {/* Segunda Línea (Móvil) / Grupo Derecho (Desktop) */}
+                <div className="flex items-center justify-center gap-4 sm:gap-2 px-2 py-2.5 sm:p-0 w-full sm:w-auto">
+                  {/* Editar Button */}
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 gap-1.5 text-slate-600 hover:bg-slate-200 hover:text-slate-900 text-xs font-black uppercase transition-colors"
+                    onClick={() => onEditar(afiliado)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Editar
+                  </button>
+
+                  {/* Eliminar Button */}
+                  <button
+                    type="button"
+                    disabled={!puedeEliminar}
+                    title={!puedeEliminar ? "No se puede eliminar al líder mientras tenga integrantes" : undefined}
+                    className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 gap-1.5 text-red-600 hover:bg-red-100 hover:text-red-900 text-xs font-black uppercase transition-colors disabled:opacity-40"
+                    onClick={() => puedeEliminar && eliminar(afiliado, onDataChange)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Borrar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}

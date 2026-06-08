@@ -26,11 +26,13 @@ import {
   obtenerSubPoliticasAction,
   crearSubPoliticaAction,
   obtenerLugaresAction,
+  obtenerSectoresAction,
   obtenerBeneficiosAction,
   crearBeneficioAction,
   type Politica,
   type SubPolitica,
   type Lugar,
+  type Sector,
   type Beneficio,
 } from "./catalogos";
 import { useQuery } from "@tanstack/react-query";
@@ -282,6 +284,8 @@ export default function AfiliadosForm({
   const [politicas, setPoliticas] = useState<Politica[]>([]);
   const [subPoliticas, setSubPoliticas] = useState<SubPolitica[]>([]);
   const [lugares, setLugares] = useState<Lugar[]>([]);
+  const [sectores, setSectores] = useState<Sector[]>([]);
+  const [sectorSeleccionado, setSectorSeleccionado] = useState<number | null>(null);
   const [loadingSubs, setLoadingSubs] = useState(false);
   const [politicaSeleccionada, setPoliticaSeleccionada] = useState<
     number | null
@@ -373,6 +377,7 @@ export default function AfiliadosForm({
       setValue("apellidos", res.apellidos);
       setValue("sexo", res.genero as "M" | "F");
       setValue("empadronado", true);
+      setValue("no_padron", dpiLimpio);
       setPadronStatus("found");
       toast.success("¡Afiliado encontrado en TSE!");
     } else {
@@ -410,16 +415,26 @@ export default function AfiliadosForm({
       Promise.all([
         obtenerPoliticasAction(),
         obtenerLugaresAction(),
+        obtenerSectoresAction(),
         obtenerBeneficiosAction(),
-      ]).then(async ([p, l, b]) => {
+      ]).then(async ([p, l, s, b]) => {
         setPoliticas(p);
         setLugares(l);
+        setSectores(s);
         setBeneficios(b);
         if (afiliadoAEditar) {
           const pid = (afiliadoAEditar as any).politica_id || null;
           const spid = (afiliadoAEditar as any).sub_politica_id || null;
           const lid = afiliadoAEditar.lugar_id || 0;
           const bid = (afiliadoAEditar as any).beneficio_id || null;
+          
+          const lugarObj = l.find(lg => lg.id === lid);
+          if (lugarObj) {
+            setSectorSeleccionado(lugarObj.sector_id ?? 0);
+          } else {
+            setSectorSeleccionado(null);
+          }
+
           setPoliticaSeleccionada(pid);
           setSubPoliticaSeleccionada(spid);
           setLugarSeleccionado(lid);
@@ -429,6 +444,7 @@ export default function AfiliadosForm({
             setSubPoliticas(subs);
           }
         } else {
+          setSectorSeleccionado(null);
           setPoliticaSeleccionada(null);
           setSubPoliticaSeleccionada(null);
           setSubPoliticas([]);
@@ -761,74 +777,89 @@ export default function AfiliadosForm({
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-purple-600 uppercase">Religión</label>
-                    <div className="flex gap-1 h-10">
-                      {!mostrandoNuevaReligion ? (
-                        <>
-                          <select {...register("religion")} className="flex-1 px-3 border rounded-md text-sm bg-white">
-                            <option value="">Seleccione...</option>
-                            <option value="Católico">Católico</option>
-                            <option value="Evangélico">Evangélico</option>
-                            {religionesExistentes.map((r) => (<option key={r as string} value={r as string}>{r as string}</option>))}
-                            {esReligionCustom && (<option value={religionActual}>{religionActual}</option>)}
-                          </select>
-                          <Button type="button" size="icon" variant="outline" className="shrink-0 border-green-200 text-green-600 h-10 w-10" onClick={() => setMostrandoNuevaReligion(true)}><Plus className="w-5 h-5" /></Button>
-                        </>
-                      ) : (
-                        <>
-                          <Input {...register("religion_otra")} placeholder="Religión..." className="flex-1 px-2" autoFocus onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const v = form.getValues("religion_otra"); if (v) { setValue("religion", v); setMostrandoNuevaReligion(false); } } }} />
-                          <Button type="button" size="icon" variant="ghost" className="shrink-0 text-green-600 bg-green-50 hover:bg-green-100 h-10 w-10" onClick={() => { const v = form.getValues("religion_otra"); if (v) { setValue("religion", v); setMostrandoNuevaReligion(false); } }}><Check className="w-4 h-4" /></Button>
-                          <Button type="button" size="icon" variant="ghost" className="shrink-0 text-red-500 bg-red-50 hover:bg-red-100 h-10 w-10" onClick={() => { setMostrandoNuevaReligion(false); setValue("religion_otra", ""); }}><X className="w-4 h-4" /></Button>
-                        </>
-                      )}
-                    </div>
+                    {!mostrandoNuevaReligion ? (
+                      <select
+                        value={religionActual || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "otros") {
+                            setMostrandoNuevaReligion(true);
+                            setValue("religion", "");
+                          } else {
+                            setValue("religion", val);
+                          }
+                        }}
+                        className="w-full h-10 px-3 border rounded-md text-sm bg-white"
+                      >
+                        <option value="">Seleccione...</option>
+                        <option value="Católico">Católico</option>
+                        <option value="Evangélico">Evangélico</option>
+                        {religionesExistentes.map((r) => (<option key={r as string} value={r as string}>{r as string}</option>))}
+                        {esReligionCustom && (<option value={religionActual}>{religionActual}</option>)}
+                        <option value="otros">+ Crear Nueva</option>
+                      </select>
+                    ) : (
+                      <div className="flex gap-2 h-10">
+                        <Input {...register("religion_otra")} placeholder="Religión..." className="flex-1 px-2" autoFocus onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const v = form.getValues("religion_otra"); if (v) { setValue("religion", v); setMostrandoNuevaReligion(false); } } }} />
+                        <Button type="button" size="icon" variant="ghost" className="shrink-0 text-green-600 bg-green-50 hover:bg-green-100 h-10 w-10" onClick={() => { const v = form.getValues("religion_otra"); if (v) { setValue("religion", v); setMostrandoNuevaReligion(false); } }}><Check className="w-4 h-4" /></Button>
+                        <Button type="button" size="icon" variant="ghost" className="shrink-0 text-red-500 bg-red-50 hover:bg-red-100 h-10 w-10" onClick={() => { setMostrandoNuevaReligion(false); setValue("religion_otra", ""); }}><X className="w-4 h-4" /></Button>
+                      </div>
+                    )}
                     {errors.religion && !mostrandoNuevaReligion && <p className="text-[10px] text-red-500">{errors.religion.message}</p>}
                   </div>
                 </div>
 
                 {/* COLUMNA DERECHA: Lugar → Condición Especial */}
                 <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-blue-600 uppercase block">
-                      Lugar
-                    </label>
-                    <select
-                      value={lugarSeleccionado || ""}
-                      onChange={(e) => {
-                        const id = Number(e.target.value);
-                        setLugarSeleccionado(id);
-                        setValue("lugar_id", id);
-                      }}
-                      className="w-full h-10 px-3 border rounded-md text-sm bg-white"
-                    >
-                      <option value="">Seleccione un lugar...</option>
-                      {Object.entries(
-                        lugares.reduce<Record<string, typeof lugares>>(
-                          (acc, l) => {
-                            const grupo = l.sector_nombre ?? "Sin Sector";
-                            if (!acc[grupo]) acc[grupo] = [];
-                            acc[grupo].push(l);
-                            return acc;
-                          },
-                          {},
-                        ),
-                      ).map(([sector, items]) => (
-                        <optgroup key={sector} label={sector}>
-                          {items.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.nombre}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                    {errors.lugar_id && (
-                      <p className="text-[10px] text-red-500">
-                        {errors.lugar_id.message}
-                      </p>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-blue-600 uppercase block">
+                        Sector
+                      </label>
+                      <select
+                        value={sectorSeleccionado !== null ? sectorSeleccionado : ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const id = val !== "" ? Number(val) : null;
+                          setSectorSeleccionado(id);
+                          setLugarSeleccionado(0);
+                          setValue("lugar_id", 0);
+                        }}
+                        className="w-full h-10 px-3 border rounded-md text-sm bg-white"
+                      >
+                        <option value="">Seleccione un sector...</option>
+                        {sectores.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {sectorSeleccionado !== null && (
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-blue-600 uppercase block">
+                          Lugar
+                        </label>
+                        <ComboSearch
+                          placeholder="Buscar lugar..."
+                          items={lugares.filter((l) => l.sector_id === sectorSeleccionado || (sectorSeleccionado === 0 && !l.sector_id))}
+                          value={lugarSeleccionado}
+                          onSelect={(id) => {
+                            setLugarSeleccionado(id);
+                            setValue("lugar_id", id);
+                          }}
+                        />
+                        {errors.lugar_id && (
+                          <p className="text-[10px] text-red-500">
+                            {errors.lugar_id.message}
+                          </p>
+                        )}
+                        <p className="text-[10px] font-semibold text-blue-500">
+                          Si el lugar no aparece, comunícate con administración.
+                        </p>
+                      </div>
                     )}
-                    <p className="text-[10px] font-semibold text-blue-500">
-                      Si el lugar no aparece, comunícate con administración.
-                    </p>
                   </div>
 
                   <div className="flex gap-3 items-end">
@@ -988,7 +1019,7 @@ export default function AfiliadosForm({
                             {b.nombre}
                           </option>
                         ))}
-                        <option value="otros">+ Otros (crear nuevo)</option>
+                        <option value="otros">+ Crear Nueva</option>
                       </select>
                     ) : (
                       <div className="flex gap-2">
