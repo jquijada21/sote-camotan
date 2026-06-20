@@ -53,9 +53,6 @@ export default function Celula({
   const liderAfiliado =
     afiliadosDelLider.find((a: Afiliado) => !!a.es_lider) ??
     (afiliadosDelLider.length > 0 ? afiliadosDelLider[0] : null);
-  const restantesAfiliados = liderAfiliado
-    ? afiliadosDelLider.filter((a: Afiliado) => a.id !== liderAfiliado.id)
-    : afiliadosDelLider;
 
   const totalEnGrupo = afiliadosDelLider.filter((a: Afiliado) => !a.familiar_de).length;
   const objetivo = config?.meta_por_lider || 0;
@@ -88,17 +85,15 @@ export default function Celula({
     gifUrl = "/gif/afiliados/gif5.gif";
   }
 
-  const familiares = restantesAfiliados.filter((a: Afiliado) => !!a.familiar_de);
-
   const afiliadosFiltrados =
     busqueda.length >= 2
-      ? restantesAfiliados.filter(
+      ? afiliadosDelLider.filter(
           (a: Afiliado) =>
             a.nombres.toLowerCase().includes(busqueda.toLowerCase()) ||
             a.apellidos.toLowerCase().includes(busqueda.toLowerCase()) ||
             a.dpi.includes(busqueda),
         )
-      : restantesAfiliados;
+      : afiliadosDelLider;
 
   const TABS = [
     { id: "miembros", label: "Miembros", icon: Users },
