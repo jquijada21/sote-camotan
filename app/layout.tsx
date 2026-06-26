@@ -4,6 +4,8 @@ import type { Metadata, Viewport } from "next";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import QueryProvider from "@/components/providers/query-provider";
+import DevBanner from "@/components/dev/DevBanner";
+import { getMensajesActivosDev } from "@/components/dev/actions/mensajes";
 
 export const metadata: Metadata = {
   title: "SOTE - Sistema de Organización Territorial Estratégica",
@@ -29,15 +31,23 @@ export const viewport: Viewport = {
 
 const geistSans = Geist({ display: "swap", subsets: ["latin"] });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let mensajesActivos = [];
+  try {
+    mensajesActivos = await getMensajesActivosDev();
+  } catch (error) {
+    console.error("Error fetching dev messages:", error);
+  }
+
   return (
     <html lang="es" className={geistSans.className} suppressHydrationWarning>
       <body className="bg-background text-foreground min-h-screen flex flex-col ">
         <QueryProvider>
+          <DevBanner initialMensajes={mensajesActivos} />
           <div className="flex flex-col flex-1">{children}</div>
         </QueryProvider>
 

@@ -494,8 +494,8 @@ export default function Ver() {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm"
           aria-hidden="true"
         />
-        <div className="fixed inset-0 flex items-center justify-center p-0 sm:p-4">
-          <DialogPanel className="mx-auto w-full md:w-[70vw] max-w-none bg-white rounded-none sm:rounded-3xl shadow-2xl overflow-hidden h-full sm:h-[95vh] flex flex-col">
+        <div className="fixed inset-0 flex items-center justify-center p-0">
+          <DialogPanel className="w-full h-full bg-white rounded-none shadow-2xl overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
               <h2 className="text-2xl font-black text-blue-900 flex items-center gap-2">
                 <Settings className="h-6 w-6" /> Configuración del Sistema

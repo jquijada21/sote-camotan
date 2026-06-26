@@ -128,6 +128,36 @@ export async function crearSectorAction(nombre: string): Promise<Sector | null> 
   return data;
 }
 
+export async function editarSectorAction(id: number, nombre: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("sectores").update({ nombre: nombre.trim() }).eq("id", id);
+  return !error;
+}
+
+export async function eliminarSectorAction(id: number) {
+  const supabase = await createClient();
+  const { count } = await supabase.from("lugares").select("id", { count: "exact", head: true }).eq("sector_id", id);
+  if (count && count > 0) return { error: "No se puede eliminar el sector porque tiene lugares asignados." };
+  
+  const { error } = await supabase.from("sectores").delete().eq("id", id);
+  return { error: error?.message };
+}
+
+export async function editarLugarAction(id: number, nombre: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("lugares").update({ nombre: nombre.trim() }).eq("id", id);
+  return !error;
+}
+
+export async function eliminarLugarAction(id: number) {
+  const supabase = await createClient();
+  const { count } = await supabase.from("afiliados").select("id", { count: "exact", head: true }).eq("lugar_id", id);
+  if (count && count > 0) return { error: "No se puede eliminar el lugar porque está asignado a afiliados." };
+
+  const { error } = await supabase.from("lugares").delete().eq("id", id);
+  return { error: error?.message };
+}
+
 export async function obtenerPoliticasConSubsAction(): Promise<
   { politica: string; subs: string[] }[]
 > {
